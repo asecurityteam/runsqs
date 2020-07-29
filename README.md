@@ -6,9 +6,9 @@
 <!-- TOC -->
 
 - [runsqs - Prepackaged Runtime Helper For AWS SQS](#runsqs---prepackaged-runtime-helper-for-aws-sqs)
-    <!-- - [Overview](#overview) -->
-    <!-- - [Quick Start](#quick-start)
-    - [Details](#details)
+    - [Overview](#overview)
+    - [Quick Start](#quick-start)
+    <!-- - [Details](#details)
         - [Configuration](#configuration)
             - [YAML](#yaml)
             - [ENV](#env)
@@ -22,13 +22,72 @@
 
 <!-- TOC -->
 
-<!-- <a id="markdown-overview" name="overview"></a>
+<a id="markdown-overview" name="overview"></a>
 ## Overview
 
 This project is a tool bundle for running a service that interacts with AWS SQS written in go. It comes with
 an opinionated choice of logger, metrics client, and configuration parsing. The benefits
-are a suite of server metrics built in, a configurable and pluggable shutdown signaling
-system, and support for restarting the server without exiting the running process. -->
+are a simple abstraction around the aws-sdk api for consuming from an SQS or producing to an SQS.
+
+<a id="markdown-quick-start" name="quick-start"></a>
+## Quick Start
+
+```golang
+package main
+
+import (
+    "net/http"
+    "fmt"
+
+    "github.com/asecurityteam/runsqs"
+    "github.com/aws/aws-sdk-go/aws"
+    "github.com/aws/aws-sdk-go/aws/session"
+    "github.com/aws/aws-sdk-go/service/sqs"
+)
+
+type BasicConsumer string
+
+func (m BasicConsumer) ConsumeMessage(ctx context.Context, message []byte) error {
+    fmt.Println(string(message))
+    fmt.Println(m)
+    return nil
+}
+
+func main() {
+    // create a new aws session, and establish a SQS instance to connect to.
+    // aws new sessions by default reads AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY as environment variables to use
+	var sesh = session.Must(session.NewSession())
+	queue := sqs.New(sesh, &aws.Config{
+		Region:     aws.String("us-west-2"),
+		HTTPClient: http.DefaultClient,
+		Endpoint:   aws.String("www.aws.com"),
+    })
+
+
+
+    consumer := runsqs.DefaultSQSQueueConsumer{
+        Queue: queue,
+        QueueURL: "www.aws.com/url/to/queue",
+        MessageConsumer: BasicConsumer{"consooooom"},
+    }
+
+    producer := runsqs.DefaultSQSProducer{
+        Queue: queue,
+        QueueURL: "www.aws.com/url/to/queue",
+    }
+
+    go producer.ProducerMessage([]byte("incoming sqs message"))
+
+    // Run the SQS consumer.
+    if err := consumer.StartConsuming(); err != nil {
+		panic(err.Error())
+    }
+
+    // expected output:
+    // "incoming sqs message"
+    // "consooooom"
+}
+```
 
 <a id="markdown-status" name="status"></a>
 ## Status

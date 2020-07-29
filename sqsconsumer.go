@@ -2,11 +2,11 @@ package runsqs
 
 import (
 	"context"
-	"fmt"
 	"math"
 	"sync"
 	"time"
 
+	logger "github.com/asecurityteam/logevent"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/request"
 	"github.com/aws/aws-sdk-go/service/sqs"
@@ -15,9 +15,14 @@ import (
 
 var mutex = &sync.Mutex{}
 
-// DefaultSQSQueueConsumer is a naive sqs queue worker
+// DefaultSQSQueueConsumer is a naive implementation of an SQSConsumer.
+// This implementation has no support for retries on nonpermanent failures;
+// the result of every message consumption is followed by a deletion of
+// the message. Furthermore, this implementation does not support concurrent
+// processing of messages; messages are processed sequentially.
 type DefaultSQSQueueConsumer struct {
 	Queue           sqsiface.SQSAPI
+	Logger          logger.Logger
 	QueueURL        string
 	deactivate      chan bool
 	MessageConsumer SQSMessageConsumer
@@ -51,7 +56,7 @@ func (m *DefaultSQSQueueConsumer) StartConsuming(ctx context.Context) error {
 		})
 		if e != nil {
 			if !(request.IsErrorRetryable(e) || request.IsErrorThrottle(e)) {
-				fmt.Println(fmt.Sprintf("Unretryable or Throttle error on sqs retrieval: %v", e.Error()))
+				m.Logger.Error(e.Error())
 			}
 			time.Sleep(1 * time.Second)
 			continue
@@ -88,7 +93,7 @@ func (m *DefaultSQSQueueConsumer) ackMessage(ctx context.Context, message *sqs.M
 		})
 		if e != nil {
 			if !(request.IsErrorRetryable(e) || request.IsErrorThrottle(e)) {
-				fmt.Println(fmt.Sprintf("Unretryable or Throttle error on sqs ack: %v", e.Error()))
+				m.Logger.Error(e.Error())
 				break
 			}
 			time.Sleep(1 * time.Second)
