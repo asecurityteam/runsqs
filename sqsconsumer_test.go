@@ -2,7 +2,6 @@ package runsqs
 
 import (
 	"context"
-	"errors"
 	"math"
 	"sync"
 	"testing"
@@ -14,9 +13,6 @@ import (
 	gomock "github.com/golang/mock/gomock"
 )
 
-/********************************
-TestDefaultSQSQueueConsumer TESTS
-********************************/
 var queueURL = "http://awssomething.com"
 
 var sqsInput = &sqs.ReceiveMessageInput{
@@ -39,7 +35,11 @@ var defaultSQSMessage = &sqs.Message{
 	ReceiptHandle: aws.String("receipt"),
 }
 
-// TestDefaultSQSQueueConsumerGoldenPath tests whether it can retrieve 5 messages,
+/********************************
+TestDefaultSQSQueueConsumer TESTS
+********************************/
+
+// TestDefaultSQSQueueConsumer_GoldenPath tests whether it can retrieve 5 messages,
 // process those 5 messages, and delete those 5 messages
 func TestDefaultSQSQueueConsumer_GoldenPath(t *testing.T) {
 	// mocks
@@ -65,12 +65,12 @@ func TestDefaultSQSQueueConsumer_GoldenPath(t *testing.T) {
 	}
 
 	// the following mocks test for exactly 5 successful message consumptions, no more no less
-	mockQueue.EXPECT().ReceiveMessage(sqsInput).DoAndReturn(func(interface{}) (*sqs.ReceiveMessageOutput, error) {
-		testBlocker.Done()
-		return receiveMessageOutput, nil
-	}).Times(5)
+	mockQueue.EXPECT().ReceiveMessage(sqsInput).Return(receiveMessageOutput, nil).Times(5)
 	mockMessageConsumer.EXPECT().ConsumeMessage(gomock.Any(), []byte(*defaultSQSMessage.Body)).Return(nil).Times(5)
-	mockQueue.EXPECT().DeleteMessage(gomock.Any()).Return(nil, nil).Times(5)
+	mockQueue.EXPECT().DeleteMessage(gomock.Any()).DoAndReturn(func(interface{}) (*sqs.DeleteMessageOutput, error) {
+		testBlocker.Done()
+		return nil, nil
+	}).Times(5)
 
 	// infinitely ping empty sqs
 	mockQueue.EXPECT().ReceiveMessage(sqsInput).Return(sqsEmptyMessageOutput, nil).AnyTimes()
@@ -82,8 +82,8 @@ func TestDefaultSQSQueueConsumer_GoldenPath(t *testing.T) {
 
 }
 
-// TestDefaultSQSQueueConsumerGoldenPath tests whether it can retrieve 5 messages,
-// process those 5 messages, and delete those 5 messages
+// TestDefaultSQSQueueConsumer_ReceivingMessageFailure tests tests whether it can retrieve 2 messages, both of them fail,
+// but only one is retryable. The non retryable causes a log.error
 func TestDefaultSQSQueueConsumer_ReceivingMessageFailure(t *testing.T) {
 	// mocks
 	var ctrl = gomock.NewController(t)
@@ -119,20 +119,92 @@ func TestDefaultSQSQueueConsumer_ReceivingMessageFailure(t *testing.T) {
 
 }
 
-func TestAsyncJobHandlerMessageAckDeleteErrorRetry(t *testing.T) {
+/********************************
+TestSmartSQSConsumer TESTS
+********************************/
+
+// TestSmartSQSConsumer_GoldenPath tests whether it can retrieve 5000 messages,
+// process those 5000 messages concurrently, and delete those 5000 messages
+func TestSmartSQSConsumer_GoldenPath(t *testing.T) {
+	// mocks
 	var ctrl = gomock.NewController(t)
 	defer ctrl.Finish()
 	mockQueue := NewMockSQSAPI(ctrl)
 	mockLogger := NewMockLogger(ctrl)
+	mockMessageConsumer := NewMockSQSMessageConsumer(ctrl)
 
-	var msg = &sqs.Message{}
-	var handler = &DefaultSQSQueueConsumer{
-		Logger:   mockLogger,
-		QueueURL: "http://awssomething.com",
-		Queue:    mockQueue,
+	// testBlocker is used to make this test deterministic(avoid timeouts)
+	var testBlocker sync.WaitGroup
+	var consumer = &SmartSQSConsumer{
+		Logger:          mockLogger,
+		QueueURL:        queueURL,
+		Queue:           mockQueue,
+		MessageConsumer: mockMessageConsumer,
+		NumWorkers:      10,
+		MessagePoolSize: 100,
 	}
 
-	mockQueue.EXPECT().DeleteMessage(gomock.Any()).Return(nil, errors.New(""))
-	mockQueue.EXPECT().DeleteMessage(gomock.Any()).Return(nil, nil)
-	handler.ackMessage(context.Background(), msg)
+	messages := []*sqs.Message{}
+	for i := 0; i < 1000; i++ {
+		messages = append(messages, defaultSQSMessage)
+	}
+
+	receiveMessageOutput := &sqs.ReceiveMessageOutput{
+		Messages: messages,
+	}
+	// the following mocks test for exactly 5 successful message consumptions, no more no less
+	mockQueue.EXPECT().ReceiveMessage(sqsInput).Return(receiveMessageOutput, nil).Times(5)
+	mockMessageConsumer.EXPECT().ConsumeMessage(gomock.Any(), []byte(*defaultSQSMessage.Body)).Return(nil).Times(5000)
+	mockQueue.EXPECT().DeleteMessage(gomock.Any()).DoAndReturn(func(interface{}) (*sqs.DeleteMessageOutput, error) {
+		testBlocker.Done()
+		return nil, nil
+	}).Times(5000)
+
+	// infinitely ping empty sqs
+	mockQueue.EXPECT().ReceiveMessage(sqsInput).Return(sqsEmptyMessageOutput, nil).AnyTimes()
+
+	testBlocker.Add(5000)
+	go consumer.StartConsuming(context.Background())
+	testBlocker.Wait()
+	consumer.StopConsuming(context.Background())
+
+}
+
+// TestSmartSQSConsumer_ReceivingMessageFailure tests whether it can retrieve 2 messages, both of them fail,
+// but only one is retryable. The non retryable causes a log.error
+func TestSmartSQSConsumer_ReceivingMessageFailure(t *testing.T) {
+	// mocks
+	var ctrl = gomock.NewController(t)
+	defer ctrl.Finish()
+	mockQueue := NewMockSQSAPI(ctrl)
+	mockLogger := NewMockLogger(ctrl)
+	mockMessageConsumer := NewMockSQSMessageConsumer(ctrl)
+
+	// testBlocker is used to make this test deterministic(avoid timeouts)
+	var testBlocker sync.WaitGroup
+	var consumer = &SmartSQSConsumer{
+		Logger:          mockLogger,
+		QueueURL:        queueURL,
+		Queue:           mockQueue,
+		MessageConsumer: mockMessageConsumer,
+		NumWorkers:      10,
+		MessagePoolSize: 100,
+	}
+
+	// 1 retryables, 1 error log
+	mockQueue.EXPECT().ReceiveMessage(sqsInput).Return(sqsEmptyMessageOutput, awserr.New("RequestThrottled", "test", nil))
+	mockLogger.EXPECT().Error(gomock.Any()).Times(1)
+	// non retryable
+	mockQueue.EXPECT().ReceiveMessage(sqsInput).Return(sqsEmptyMessageOutput, awserr.New("RequestCanceled", "test", nil))
+
+	// infinitely ping empty sqs
+	mockQueue.EXPECT().ReceiveMessage(sqsInput).DoAndReturn(func(interface{}) (interface{}, error) {
+		defer testBlocker.Done()
+		return sqsEmptyMessageOutput, nil
+	}).AnyTimes()
+	testBlocker.Add(1)
+	go consumer.StartConsuming(context.Background())
+	testBlocker.Wait()
+	consumer.StopConsuming(context.Background())
+
 }
