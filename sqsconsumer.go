@@ -191,7 +191,7 @@ func (m *SmartSQSConsumer) worker(ctx context.Context, messages <-chan *sqs.Mess
 					})
 					return e
 				})
-
+				return
 			default:
 				m.ackMessage(ctx, func() error {
 					var _, e = m.Queue.DeleteMessage(&sqs.DeleteMessageInput{
@@ -200,7 +200,7 @@ func (m *SmartSQSConsumer) worker(ctx context.Context, messages <-chan *sqs.Mess
 					})
 					return e
 				})
-
+				return
 			}
 		}
 		m.ackMessage(ctx, func() error {

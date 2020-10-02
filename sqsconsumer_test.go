@@ -2,6 +2,7 @@ package runsqs
 
 import (
 	"context"
+	"errors"
 	"math"
 	"sync"
 	"testing"
@@ -202,6 +203,105 @@ func TestSmartSQSConsumer_ReceivingMessageFailure(t *testing.T) {
 		defer testBlocker.Done()
 		return sqsEmptyMessageOutput, nil
 	}).AnyTimes()
+	testBlocker.Add(1)
+	go consumer.StartConsuming(context.Background())
+	testBlocker.Wait()
+	consumer.StopConsuming(context.Background())
+
+}
+
+// TestSmartSQSConsumer_ConsumeMessageFailures tests retryable and nonretryable ConsumeMessage
+// errors.
+func TestSmartSQSConsumer_ConsumeMessageFailures(t *testing.T) {
+	// mocks
+	var ctrl = gomock.NewController(t)
+	defer ctrl.Finish()
+	mockQueue := NewMockSQSAPI(ctrl)
+	mockLogger := NewMockLogger(ctrl)
+	mockMessageConsumer := NewMockSQSMessageConsumer(ctrl)
+
+	// testBlocker is used to make this test deterministic(avoid timeouts)
+	var testBlocker sync.WaitGroup
+	var consumer = &SmartSQSConsumer{
+		Logger:          mockLogger,
+		QueueURL:        queueURL,
+		Queue:           mockQueue,
+		MessageConsumer: mockMessageConsumer,
+		NumWorkers:      10,
+		MessagePoolSize: 100,
+	}
+
+	messages := []*sqs.Message{}
+	for i := 0; i < 2; i++ {
+		messages = append(messages, defaultSQSMessage)
+	}
+
+	receiveMessageOutput := &sqs.ReceiveMessageOutput{
+		Messages: messages,
+	}
+
+	mockQueue.EXPECT().ReceiveMessage(sqsInput).Return(receiveMessageOutput, nil)
+
+	mockMessageConsumer.EXPECT().ConsumeMessage(gomock.Any(), defaultSQSMessage).Return(RetryableConsumerError{})
+	mockMessageConsumer.EXPECT().ConsumeMessage(gomock.Any(), defaultSQSMessage).Return(errors.New("a permenanet error"))
+	mockQueue.EXPECT().ChangeMessageVisibility(gomock.Any()).DoAndReturn(func(interface{}) (*sqs.DeleteMessageOutput, error) {
+		testBlocker.Done()
+		return nil, nil
+	})
+	mockQueue.EXPECT().DeleteMessage(gomock.Any()).DoAndReturn(func(interface{}) (*sqs.DeleteMessageOutput, error) {
+		testBlocker.Done()
+		return nil, nil
+	})
+	testBlocker.Add(2)
+	go consumer.StartConsuming(context.Background())
+	testBlocker.Wait()
+	consumer.StopConsuming(context.Background())
+
+}
+
+// TestSmartSQSConsumer_ConsumeMessageFailures tests retryable and nonretryable ConsumeMessage
+// errors.
+func TestSmartSQSConsumer_ConsumeMessageAckFailure(t *testing.T) {
+	// mocks
+	var ctrl = gomock.NewController(t)
+	defer ctrl.Finish()
+	mockQueue := NewMockSQSAPI(ctrl)
+	mockLogger := NewMockLogger(ctrl)
+	mockMessageConsumer := NewMockSQSMessageConsumer(ctrl)
+
+	// testBlocker is used to make this test deterministic(avoid timeouts)
+	var testBlocker sync.WaitGroup
+	var consumer = &SmartSQSConsumer{
+		Logger:          mockLogger,
+		QueueURL:        queueURL,
+		Queue:           mockQueue,
+		MessageConsumer: mockMessageConsumer,
+		NumWorkers:      10,
+		MessagePoolSize: 100,
+	}
+
+	messages := []*sqs.Message{}
+	for i := 0; i < 1; i++ {
+		messages = append(messages, defaultSQSMessage)
+	}
+
+	receiveMessageOutput := &sqs.ReceiveMessageOutput{
+		Messages: messages,
+	}
+	mockQueue.EXPECT().ReceiveMessage(sqsInput).Return(receiveMessageOutput, nil)
+
+	mockMessageConsumer.EXPECT().ConsumeMessage(gomock.Any(), defaultSQSMessage).Return(nil)
+
+	mockQueue.EXPECT().DeleteMessage(gomock.Any()).DoAndReturn(func(interface{}) (*sqs.DeleteMessageOutput, error) {
+
+		return nil, awserr.New("RequestThrottled", "test", nil)
+	}).Times(1)
+	mockQueue.EXPECT().DeleteMessage(gomock.Any()).DoAndReturn(func(interface{}) (*sqs.DeleteMessageOutput, error) {
+		testBlocker.Done()
+
+		return nil, nil
+	}).Times(1)
+	mockQueue.EXPECT().ReceiveMessage(sqsInput).Return(sqsEmptyMessageOutput, nil).AnyTimes()
 	testBlocker.Add(1)
 	go consumer.StartConsuming(context.Background())
 	testBlocker.Wait()
