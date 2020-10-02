@@ -1,6 +1,10 @@
 package runsqs
 
-import "context"
+import (
+	"context"
+
+	"github.com/aws/aws-sdk-go/service/sqs"
+)
 
 // SQSConsumer is an interface that represents an aws sqs queue worker.
 // Implementers of SQSConsumer are responsible for:
@@ -17,7 +21,7 @@ type SQSConsumer interface {
 // should be consumer. Users are responsible for unmarshalling messages themselves,
 // and returning errors.
 type SQSMessageConsumer interface {
-	ConsumeMessage(ctx context.Context, message []byte) error
+	ConsumeMessage(ctx context.Context, message *sqs.Message) error
 }
 
 // SQSProducer is an interface for producing messages to an aws sqs instance.

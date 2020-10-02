@@ -6,6 +6,7 @@ package runsqs
 
 import (
 	context "context"
+	sqs "github.com/aws/aws-sdk-go/service/sqs"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 )
@@ -99,7 +100,7 @@ func (m *MockSQSMessageConsumer) EXPECT() *MockSQSMessageConsumerMockRecorder {
 }
 
 // ConsumeMessage mocks base method
-func (m *MockSQSMessageConsumer) ConsumeMessage(ctx context.Context, message []byte) error {
+func (m *MockSQSMessageConsumer) ConsumeMessage(ctx context.Context, message *sqs.Message) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ConsumeMessage", ctx, message)
 	ret0, _ := ret[0].(error)

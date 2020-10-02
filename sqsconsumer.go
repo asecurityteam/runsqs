@@ -62,7 +62,7 @@ func (m *DefaultSQSQueueConsumer) StartConsuming(ctx context.Context) error {
 			continue
 		}
 		for _, message := range result.Messages {
-			_ = m.GetSQSMessageConsumer().ConsumeMessage(ctx, []byte(*message.Body))
+			_ = m.GetSQSMessageConsumer().ConsumeMessage(ctx, message)
 			m.ackMessage(ctx, func() error {
 				var _, e = m.Queue.DeleteMessage(&sqs.DeleteMessageInput{
 					QueueUrl:      aws.String(m.QueueURL),
@@ -178,7 +178,7 @@ func (m *SmartSQSConsumer) StartConsuming(ctx context.Context) error {
 // messages that have retryable error.
 func (m *SmartSQSConsumer) worker(ctx context.Context, messages <-chan *sqs.Message) {
 	for message := range messages {
-		err := m.GetSQSMessageConsumer().ConsumeMessage(ctx, []byte(*message.Body))
+		err := m.GetSQSMessageConsumer().ConsumeMessage(ctx, message)
 		if err != nil {
 			switch err.(type) {
 			case RetryableConsumerError:
@@ -191,7 +191,7 @@ func (m *SmartSQSConsumer) worker(ctx context.Context, messages <-chan *sqs.Mess
 					})
 					return e
 				})
-
+				return
 			default:
 				m.ackMessage(ctx, func() error {
 					var _, e = m.Queue.DeleteMessage(&sqs.DeleteMessageInput{
@@ -200,7 +200,7 @@ func (m *SmartSQSConsumer) worker(ctx context.Context, messages <-chan *sqs.Mess
 					})
 					return e
 				})
-
+				return
 			}
 		}
 		m.ackMessage(ctx, func() error {
