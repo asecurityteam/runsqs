@@ -66,7 +66,7 @@ func TestDefaultSQSQueueConsumer_GoldenPath(t *testing.T) {
 
 	// the following mocks test for exactly 5 successful message consumptions, no more no less
 	mockQueue.EXPECT().ReceiveMessage(sqsInput).Return(receiveMessageOutput, nil).Times(5)
-	mockMessageConsumer.EXPECT().ConsumeMessage(gomock.Any(), []byte(*defaultSQSMessage.Body)).Return(nil).Times(5)
+	mockMessageConsumer.EXPECT().ConsumeMessage(gomock.Any(), defaultSQSMessage).Return(nil).Times(5)
 	mockQueue.EXPECT().DeleteMessage(gomock.Any()).DoAndReturn(func(interface{}) (*sqs.DeleteMessageOutput, error) {
 		testBlocker.Done()
 		return nil, nil
@@ -154,7 +154,7 @@ func TestSmartSQSConsumer_GoldenPath(t *testing.T) {
 	}
 	// the following mocks test for exactly 5 successful message consumptions, no more no less
 	mockQueue.EXPECT().ReceiveMessage(sqsInput).Return(receiveMessageOutput, nil).Times(5)
-	mockMessageConsumer.EXPECT().ConsumeMessage(gomock.Any(), []byte(*defaultSQSMessage.Body)).Return(nil).Times(5000)
+	mockMessageConsumer.EXPECT().ConsumeMessage(gomock.Any(), defaultSQSMessage).Return(nil).Times(5000)
 	mockQueue.EXPECT().DeleteMessage(gomock.Any()).DoAndReturn(func(interface{}) (*sqs.DeleteMessageOutput, error) {
 		testBlocker.Done()
 		return nil, nil
