@@ -243,7 +243,7 @@ func TestSmartSQSConsumer_ConsumeMessageFailures(t *testing.T) {
 	mockQueue.EXPECT().ReceiveMessage(sqsInput).Return(receiveMessageOutput, nil)
 
 	mockMessageConsumer.EXPECT().ConsumeMessage(gomock.Any(), defaultSQSMessage).Return(RetryableConsumerError{})
-	mockMessageConsumer.EXPECT().ConsumeMessage(gomock.Any(), defaultSQSMessage).Return(errors.New("a permenanet error"))
+	mockMessageConsumer.EXPECT().ConsumeMessage(gomock.Any(), defaultSQSMessage).Return(errors.New("a permanent error"))
 	mockQueue.EXPECT().ChangeMessageVisibility(gomock.Any()).DoAndReturn(func(interface{}) (*sqs.DeleteMessageOutput, error) {
 		testBlocker.Done()
 		return nil, nil
@@ -259,8 +259,7 @@ func TestSmartSQSConsumer_ConsumeMessageFailures(t *testing.T) {
 
 }
 
-// TestSmartSQSConsumer_ConsumeMessageFailures tests retryable and nonretryable ConsumeMessage
-// errors.
+// TestSmartSQSConsumer_ConsumeMessageAckFailure tests retryable acks.
 func TestSmartSQSConsumer_ConsumeMessageAckFailure(t *testing.T) {
 	// mocks
 	var ctrl = gomock.NewController(t)
@@ -293,12 +292,10 @@ func TestSmartSQSConsumer_ConsumeMessageAckFailure(t *testing.T) {
 	mockMessageConsumer.EXPECT().ConsumeMessage(gomock.Any(), defaultSQSMessage).Return(nil)
 
 	mockQueue.EXPECT().DeleteMessage(gomock.Any()).DoAndReturn(func(interface{}) (*sqs.DeleteMessageOutput, error) {
-
 		return nil, awserr.New("RequestThrottled", "test", nil)
 	}).Times(1)
 	mockQueue.EXPECT().DeleteMessage(gomock.Any()).DoAndReturn(func(interface{}) (*sqs.DeleteMessageOutput, error) {
 		testBlocker.Done()
-
 		return nil, nil
 	}).Times(1)
 	mockQueue.EXPECT().ReceiveMessage(sqsInput).Return(sqsEmptyMessageOutput, nil).AnyTimes()
