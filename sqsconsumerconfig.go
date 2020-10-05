@@ -56,7 +56,6 @@ type SmartSQSQueueConsumerConfig struct {
 	AWSEndpoint     string
 	QueueURL        string
 	QueueRegion     string
-	Logger          *log.Config
 	NumWorkers      uint64
 	MessagePoolSize uint64
 }
@@ -75,16 +74,12 @@ type SmartSQSQueueConsumerComponent struct {
 
 // NewSmartSQSQueueConsumerComponent generates a new SmartSQSQueueConsumerComponent
 func NewSmartSQSQueueConsumerComponent() *SmartSQSQueueConsumerComponent {
-	return &SmartSQSQueueConsumerComponent{
-		Logger: log.NewComponent(),
-	}
+	return &SmartSQSQueueConsumerComponent{}
 }
 
 // Settings generates the default configuration for DefaultSQSQueueConsumerComponent
 func (c *SmartSQSQueueConsumerComponent) Settings() *SmartSQSQueueConsumerConfig {
-	return &SmartSQSQueueConsumerConfig{
-		Logger: c.Logger.Settings(),
-	}
+	return &SmartSQSQueueConsumerConfig{}
 }
 
 // New creates a configured SmartSQSConsumer
