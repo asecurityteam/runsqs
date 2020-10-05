@@ -20,7 +20,7 @@ type DefaultSQSQueueConsumerConfig struct {
 
 // Name of the configuration
 func (*DefaultSQSQueueConsumerConfig) Name() string {
-	return "defaultsqsworker"
+	return "sqsworker"
 }
 
 // DefaultSQSQueueConsumerComponent enables creating configured Component
@@ -42,7 +42,7 @@ func (c *DefaultSQSQueueConsumerComponent) Settings() *DefaultSQSQueueConsumerCo
 	}
 }
 
-// New creates a configured MicrosLifecycleEventHandler
+// New creates a configured DefaultSQSQueueConsumer
 func (c *DefaultSQSQueueConsumerComponent) New(ctx context.Context, config *DefaultSQSQueueConsumerConfig) (DefaultSQSQueueConsumer, error) {
 	var sesh = session.Must(session.NewSession())
 	q := sqs.New(sesh, &aws.Config{
@@ -60,5 +60,64 @@ func (c *DefaultSQSQueueConsumerComponent) New(ctx context.Context, config *Defa
 		Logger:   logger,
 		QueueURL: config.QueueURL,
 		Queue:    q,
+	}, nil
+}
+
+// SmartSQSQueueConsumerConfig represents the configuration to configure SmartSQSQueueConsumer
+type SmartSQSQueueConsumerConfig struct {
+	AWSEndpoint     string
+	QueueURL        string
+	QueueRegion     string
+	Logger          *log.Config
+	NumWorkers      uint64
+	MessagePoolSize uint64
+}
+
+// Name of the configuration
+func (*SmartSQSQueueConsumerConfig) Name() string {
+	return "sqsworker"
+}
+
+// SmartSQSQueueConsumerComponent enables creating configured Component
+type SmartSQSQueueConsumerComponent struct {
+	Logger          *log.Component
+	NumWorkers      uint64
+	MessagePoolSize uint64
+}
+
+// NewSmartSQSQueueConsumerComponent generates a new SmartSQSQueueConsumerComponent
+func NewSmartSQSQueueConsumerComponent() *SmartSQSQueueConsumerComponent {
+	return &SmartSQSQueueConsumerComponent{
+		Logger: log.NewComponent(),
+	}
+}
+
+// Settings generates the default configuration for DefaultSQSQueueConsumerComponent
+func (c *SmartSQSQueueConsumerComponent) Settings() *SmartSQSQueueConsumerConfig {
+	return &SmartSQSQueueConsumerConfig{
+		Logger: c.Logger.Settings(),
+	}
+}
+
+// New creates a configured SmartSQSConsumer
+func (c *SmartSQSQueueConsumerComponent) New(ctx context.Context, config *SmartSQSQueueConsumerConfig) (SmartSQSConsumer, error) {
+	var sesh = session.Must(session.NewSession())
+	q := sqs.New(sesh, &aws.Config{
+		Region:     aws.String(config.QueueRegion),
+		HTTPClient: http.DefaultClient,
+		Endpoint:   aws.String(config.AWSEndpoint),
+	})
+
+	logger, err := c.Logger.New(ctx, config.Logger)
+	if err != nil {
+		return SmartSQSConsumer{}, err
+	}
+
+	return SmartSQSConsumer{
+		Logger:          logger,
+		QueueURL:        config.QueueURL,
+		Queue:           q,
+		NumWorkers:      config.NumWorkers,
+		MessagePoolSize: config.MessagePoolSize,
 	}, nil
 }
