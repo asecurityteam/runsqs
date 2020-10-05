@@ -53,7 +53,7 @@ func TestDefaultSQSQueueConsumer_GoldenPath(t *testing.T) {
 	// testBlocker is used to make this test deterministic(avoid timeouts)
 	var testBlocker sync.WaitGroup
 	var consumer = &DefaultSQSQueueConsumer{
-		Logger:          mockLogger,
+		LogFn:           func(context.Context) Logger { return mockLogger },
 		QueueURL:        queueURL,
 		Queue:           mockQueue,
 		MessageConsumer: mockMessageConsumer,
@@ -96,7 +96,7 @@ func TestDefaultSQSQueueConsumer_ReceivingMessageFailure(t *testing.T) {
 	// testBlocker is used to make this test deterministic(avoid timeouts)
 	var testBlocker sync.WaitGroup
 	var consumer = &DefaultSQSQueueConsumer{
-		Logger:          mockLogger,
+		LogFn:           func(context.Context) Logger { return mockLogger },
 		QueueURL:        queueURL,
 		Queue:           mockQueue,
 		MessageConsumer: mockMessageConsumer,
@@ -137,7 +137,7 @@ func TestSmartSQSConsumer_GoldenPath(t *testing.T) {
 	// testBlocker is used to make this test deterministic(avoid timeouts)
 	var testBlocker sync.WaitGroup
 	var consumer = &SmartSQSConsumer{
-		Logger:          mockLogger,
+		LogFn:           func(context.Context) Logger { return mockLogger },
 		QueueURL:        queueURL,
 		Queue:           mockQueue,
 		MessageConsumer: mockMessageConsumer,
@@ -184,7 +184,7 @@ func TestSmartSQSConsumer_ReceivingMessageFailure(t *testing.T) {
 	// testBlocker is used to make this test deterministic(avoid timeouts)
 	var testBlocker sync.WaitGroup
 	var consumer = &SmartSQSConsumer{
-		Logger:          mockLogger,
+		LogFn:           func(context.Context) Logger { return mockLogger },
 		QueueURL:        queueURL,
 		Queue:           mockQueue,
 		MessageConsumer: mockMessageConsumer,
@@ -223,7 +223,7 @@ func TestSmartSQSConsumer_ConsumeMessageFailures(t *testing.T) {
 	// testBlocker is used to make this test deterministic(avoid timeouts)
 	var testBlocker sync.WaitGroup
 	var consumer = &SmartSQSConsumer{
-		Logger:          mockLogger,
+		LogFn:           func(context.Context) Logger { return mockLogger },
 		QueueURL:        queueURL,
 		Queue:           mockQueue,
 		MessageConsumer: mockMessageConsumer,
@@ -271,7 +271,7 @@ func TestSmartSQSConsumer_ConsumeMessageAckFailure(t *testing.T) {
 	// testBlocker is used to make this test deterministic(avoid timeouts)
 	var testBlocker sync.WaitGroup
 	var consumer = &SmartSQSConsumer{
-		Logger:          mockLogger,
+		LogFn:           func(context.Context) Logger { return mockLogger },
 		QueueURL:        queueURL,
 		Queue:           mockQueue,
 		MessageConsumer: mockMessageConsumer,

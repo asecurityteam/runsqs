@@ -25,7 +25,7 @@ func (*DefaultSQSProducerConfig) Name() string {
 type DefaultSQSProducerComponent struct {
 }
 
-// NewDefaultSQSQueueConsumerComponent generates a new DefaultSQSQueueConsumerComponent
+// NewDefaultSQSProducerComponent generates a new DefaultSQSQueueConsumerComponent
 func NewDefaultSQSProducerComponent() *DefaultSQSProducerComponent {
 	return &DefaultSQSProducerComponent{}
 }

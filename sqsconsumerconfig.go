@@ -15,7 +15,6 @@ type DefaultSQSQueueConsumerConfig struct {
 	AWSEndpoint string
 	QueueURL    string
 	QueueRegion string
-	Logger      *log.Config
 }
 
 // Name of the configuration
@@ -25,21 +24,16 @@ func (*DefaultSQSQueueConsumerConfig) Name() string {
 
 // DefaultSQSQueueConsumerComponent enables creating configured Component
 type DefaultSQSQueueConsumerComponent struct {
-	Logger *log.Component
 }
 
 // NewDefaultSQSQueueConsumerComponent generates a new DefaultSQSQueueConsumerComponent
 func NewDefaultSQSQueueConsumerComponent() *DefaultSQSQueueConsumerComponent {
-	return &DefaultSQSQueueConsumerComponent{
-		Logger: log.NewComponent(),
-	}
+	return &DefaultSQSQueueConsumerComponent{}
 }
 
 // Settings generates the default configuration for DefaultSQSQueueConsumerComponent
 func (c *DefaultSQSQueueConsumerComponent) Settings() *DefaultSQSQueueConsumerConfig {
-	return &DefaultSQSQueueConsumerConfig{
-		Logger: c.Logger.Settings(),
-	}
+	return &DefaultSQSQueueConsumerConfig{}
 }
 
 // New creates a configured DefaultSQSQueueConsumer
@@ -51,13 +45,7 @@ func (c *DefaultSQSQueueConsumerComponent) New(ctx context.Context, config *Defa
 		Endpoint:   aws.String(config.AWSEndpoint),
 	})
 
-	logger, err := c.Logger.New(ctx, config.Logger)
-	if err != nil {
-		return DefaultSQSQueueConsumer{}, err
-	}
-
 	return DefaultSQSQueueConsumer{
-		Logger:   logger,
 		QueueURL: config.QueueURL,
 		Queue:    q,
 	}, nil
@@ -108,13 +96,8 @@ func (c *SmartSQSQueueConsumerComponent) New(ctx context.Context, config *SmartS
 		Endpoint:   aws.String(config.AWSEndpoint),
 	})
 
-	logger, err := c.Logger.New(ctx, config.Logger)
-	if err != nil {
-		return SmartSQSConsumer{}, err
-	}
-
 	return SmartSQSConsumer{
-		Logger:          logger,
+		LogFn:           LoggerFromContext,
 		QueueURL:        config.QueueURL,
 		Queue:           q,
 		NumWorkers:      config.NumWorkers,

@@ -39,7 +39,7 @@ func TestDefaultSQSProducer_ProduceMessage_Failure(t *testing.T) {
 	mockQueue.EXPECT().SendMessage(&sqs.SendMessageInput{
 		QueueUrl:    aws.String(producer.QueueURL),
 		MessageBody: aws.String(string(message)),
-	}).Return(&sqs.SendMessageOutput{}, errors.New("error!"))
+	}).Return(&sqs.SendMessageOutput{}, errors.New("error"))
 	err := producer.ProduceMessage(message)
 	assert.NotNil(t, err)
 }
