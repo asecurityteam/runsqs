@@ -6,7 +6,6 @@ import (
 	"sync"
 	"time"
 
-	logger "github.com/asecurityteam/logevent"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/request"
 	"github.com/aws/aws-sdk-go/service/sqs"
@@ -22,7 +21,7 @@ var mutex = &sync.Mutex{}
 // processing of messages; messages are processed sequentially.
 type DefaultSQSQueueConsumer struct {
 	Queue           sqsiface.SQSAPI
-	Logger          logger.Logger
+	LogFn           LogFn
 	QueueURL        string
 	deactivate      chan bool
 	MessageConsumer SQSMessageConsumer
@@ -30,6 +29,7 @@ type DefaultSQSQueueConsumer struct {
 
 // StartConsuming starts consuming from the configured SQS queue
 func (m *DefaultSQSQueueConsumer) StartConsuming(ctx context.Context) error {
+	logger := m.LogFn(ctx)
 
 	mutex.Lock()
 	m.deactivate = make(chan bool)
@@ -56,7 +56,7 @@ func (m *DefaultSQSQueueConsumer) StartConsuming(ctx context.Context) error {
 		})
 		if e != nil {
 			if !(request.IsErrorRetryable(e) || request.IsErrorThrottle(e)) {
-				m.Logger.Error(e.Error())
+				logger.Error(e.Error())
 			}
 			time.Sleep(1 * time.Second)
 			continue
@@ -92,11 +92,13 @@ func (m *DefaultSQSQueueConsumer) GetSQSMessageConsumer() SQSMessageConsumer {
 }
 
 func (m *DefaultSQSQueueConsumer) ackMessage(ctx context.Context, ack func() error) {
+	logger := m.LogFn(ctx)
+
 	for {
 		e := ack()
 		if e != nil {
 			if !(request.IsErrorRetryable(e) || request.IsErrorThrottle(e)) {
-				m.Logger.Error(e.Error())
+				logger.Error(e.Error())
 				break
 			}
 			time.Sleep(1 * time.Second)
@@ -112,7 +114,7 @@ func (m *DefaultSQSQueueConsumer) ackMessage(ctx context.Context, ack func() err
 // - concurrent workers
 type SmartSQSConsumer struct {
 	Queue           sqsiface.SQSAPI
-	Logger          logger.Logger
+	LogFn           LogFn
 	QueueURL        string
 	deactivate      chan bool
 	MessageConsumer SQSMessageConsumer
@@ -122,6 +124,7 @@ type SmartSQSConsumer struct {
 
 // StartConsuming starts consuming from the configured SQS queue
 func (m *SmartSQSConsumer) StartConsuming(ctx context.Context) error {
+	logger := m.LogFn(ctx)
 
 	mutex.Lock()
 	m.deactivate = make(chan bool)
@@ -158,7 +161,7 @@ func (m *SmartSQSConsumer) StartConsuming(ctx context.Context) error {
 		})
 		if e != nil {
 			if !(request.IsErrorRetryable(e) || request.IsErrorThrottle(e)) {
-				m.Logger.Error(e.Error())
+				logger.Error(e.Error())
 			}
 			time.Sleep(1 * time.Second)
 			continue
@@ -220,11 +223,13 @@ func (m *SmartSQSConsumer) GetSQSMessageConsumer() SQSMessageConsumer {
 }
 
 func (m *SmartSQSConsumer) ackMessage(ctx context.Context, ack func() error) {
+	logger := m.LogFn(ctx)
+
 	for {
 		e := ack()
 		if e != nil {
 			if !(request.IsErrorRetryable(e) || request.IsErrorThrottle(e)) {
-				m.Logger.Error(e.Error())
+				logger.Error(e.Error())
 				break
 			}
 			time.Sleep(1 * time.Second)
