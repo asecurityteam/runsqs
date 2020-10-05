@@ -4,7 +4,6 @@ import (
 	"context"
 	"net/http"
 
-	log "github.com/asecurityteam/component-log"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sqs"
@@ -67,7 +66,6 @@ func (*SmartSQSQueueConsumerConfig) Name() string {
 
 // SmartSQSQueueConsumerComponent enables creating configured Component
 type SmartSQSQueueConsumerComponent struct {
-	Logger          *log.Component
 	NumWorkers      uint64
 	MessagePoolSize uint64
 }
