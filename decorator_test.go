@@ -20,7 +20,7 @@ func TestDecorator(t *testing.T) {
 
 	decorator1 := func(SQSMessageConsumer) SQSMessageConsumer {
 		assert.Equal(t, counter, 0)
-		counter += 1
+		counter++
 		return mockSQSMessageConsumer1
 	}
 
