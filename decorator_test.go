@@ -19,6 +19,7 @@ func TestDecorator(t *testing.T) {
 	mockSQSMessageConsumerBase := NewMockSQSMessageConsumer(ctrl)
 
 	decorator1 := func(SQSMessageConsumer) SQSMessageConsumer {
+		// these assertions asserts the order of decorators applied
 		assert.Equal(t, counter, 0)
 		counter++
 		return mockSQSMessageConsumer1
