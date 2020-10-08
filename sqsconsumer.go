@@ -2,7 +2,9 @@ package runsqs
 
 import (
 	"context"
+	"fmt"
 	"math"
+	"strconv"
 	"sync"
 	"time"
 
@@ -120,6 +122,7 @@ type SmartSQSConsumer struct {
 	MessageConsumer SQSMessageConsumer
 	NumWorkers      uint64
 	MessagePoolSize uint64
+	MaxRetries      uint64
 }
 
 // StartConsuming starts consuming from the configured SQS queue
@@ -153,6 +156,7 @@ func (m *SmartSQSConsumer) StartConsuming(ctx context.Context) error {
 			QueueUrl: aws.String(m.QueueURL),
 			AttributeNames: aws.StringSlice([]string{
 				"SentTimestamp",
+				// "ApproximateReceiveCount",
 			}),
 			MessageAttributeNames: aws.StringSlice([]string{
 				"All",
@@ -185,6 +189,18 @@ func (m *SmartSQSConsumer) worker(ctx context.Context, messages <-chan *sqs.Mess
 		if err != nil {
 			switch err.(type) {
 			case RetryableConsumerError:
+				// receiveCount := getApproximateReceiveCount(message)
+				// if receiveCount > m.MaxRetries {
+				// 	m.ackMessage(ctx, func() error {
+				// 		var _, e = m.Queue.DeleteMessage(&sqs.DeleteMessageInput{
+				// 			QueueUrl:      aws.String(m.QueueURL),
+				// 			ReceiptHandle: message.ReceiptHandle,
+				// 		})
+				// 		return e
+				// 	})
+				// 	continue
+				// }
+				// fmt.Println(receiveCount)
 				retryableErr := err.(RetryableConsumerError)
 				m.ackMessage(ctx, func() error {
 					var _, e = m.Queue.ChangeMessageVisibility(&sqs.ChangeMessageVisibilityInput{
@@ -237,6 +253,13 @@ func (m *SmartSQSConsumer) ackMessage(ctx context.Context, ack func() error) {
 		}
 		break
 	}
+}
+
+func getApproximateReceiveCount(message *sqs.Message) int64 {
+	fmt.Println(*(message.Attributes["ApproximateReceiveCount"]))
+	receiveCountString := *(message.Attributes["ApproximateReceiveCount"])
+	receiveCount, _ := strconv.ParseInt(receiveCountString, 10, 64)
+	return receiveCount
 }
 
 // StopConsuming stops this DefaultSQSQueueConsumer consuming from the SQS queue
