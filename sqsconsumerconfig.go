@@ -10,9 +10,9 @@ import (
 )
 
 const (
-	DefaultNumWorkers      = 1
-	DefaultMessagePoolSize = 1
-	DefaultMaxRetries      = 3
+	defaultNumWorkers      = 1
+	defaultMessagePoolSize = 1
+	defaultMaxRetries      = 3
 )
 
 // DefaultSQSQueueConsumerConfig represents the configuration to configure DefaultSQSQueueConsumer
@@ -83,9 +83,9 @@ func NewSmartSQSQueueConsumerComponent() *SmartSQSQueueConsumerComponent {
 // Settings generates the default configuration for DefaultSQSQueueConsumerComponent
 func (c *SmartSQSQueueConsumerComponent) Settings() *SmartSQSQueueConsumerConfig {
 	return &SmartSQSQueueConsumerConfig{
-		NumWorkers:      DefaultNumWorkers,
-		MessagePoolSize: DefaultMessagePoolSize,
-		MaxRetries:      DefaultMaxRetries,
+		NumWorkers:      defaultNumWorkers,
+		MessagePoolSize: defaultMessagePoolSize,
+		MaxRetries:      defaultMaxRetries,
 	}
 }
 
