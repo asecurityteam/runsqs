@@ -3,6 +3,7 @@ package runsqs
 import (
 	"context"
 	"math"
+	"strconv"
 	"sync"
 	"time"
 
@@ -111,6 +112,7 @@ func (m *DefaultSQSQueueConsumer) ackMessage(ctx context.Context, ack func() err
 // SmartSQSConsumer is an implementation of an SQSConsumer.
 // This implementation supports...
 // - retryable and non-retryable errors.
+// - a maximum number of retries to be placed on a retryable sqs message
 // - concurrent workers
 type SmartSQSConsumer struct {
 	Queue           sqsiface.SQSAPI
@@ -120,6 +122,7 @@ type SmartSQSConsumer struct {
 	MessageConsumer SQSMessageConsumer
 	NumWorkers      uint64
 	MessagePoolSize uint64
+	MaxRetries      uint64
 }
 
 // StartConsuming starts consuming from the configured SQS queue
@@ -153,6 +156,7 @@ func (m *SmartSQSConsumer) StartConsuming(ctx context.Context) error {
 			QueueUrl: aws.String(m.QueueURL),
 			AttributeNames: aws.StringSlice([]string{
 				"SentTimestamp",
+				"ApproximateReceiveCount",
 			}),
 			MessageAttributeNames: aws.StringSlice([]string{
 				"All",
@@ -178,50 +182,64 @@ func (m *SmartSQSConsumer) StartConsuming(ctx context.Context) error {
 
 // worker function represents a single "message worker." worker will infinitely process messages until
 // messages is closed. worker is responsible for handling deletion of messages, or handling
-// messages that have retryable error.
+// messages that have retryable error. On the event of a retryable error, worker will change
+// the visibilitytimeout of a message to be the configured retryableErr.VisibilityTimeout
 func (m *SmartSQSConsumer) worker(ctx context.Context, messages <-chan *sqs.Message) {
 	for message := range messages {
-		err := m.GetSQSMessageConsumer().ConsumeMessage(ctx, message)
-		if err != nil {
-			switch err.(type) {
-			case RetryableConsumerError:
-				retryableErr := err.(RetryableConsumerError)
-				m.ackMessage(ctx, func() error {
-					var _, e = m.Queue.ChangeMessageVisibility(&sqs.ChangeMessageVisibilityInput{
-						QueueUrl:          aws.String(m.QueueURL),
-						ReceiptHandle:     message.ReceiptHandle,
-						VisibilityTimeout: &retryableErr.VisibilityTimeout,
+		consumerErr := m.GetSQSMessageConsumer().ConsumeMessage(ctx, message)
+		if consumerErr != nil {
+			if consumerErr.IsRetryable() {
+				// check to see if we've reached the maximum number of retries allowed
+				receiveCount := getApproximateReceiveCount(message)
+				if receiveCount > m.MaxRetries {
+					m.ackMessage(ctx, func() error {
+						return m.deleteMessage(message)
 					})
-					return e
-				})
-				continue
-			default:
+					continue
+				}
+				// retry this message by changing visibility timeout of message
 				m.ackMessage(ctx, func() error {
-					var _, e = m.Queue.DeleteMessage(&sqs.DeleteMessageInput{
-						QueueUrl:      aws.String(m.QueueURL),
-						ReceiptHandle: message.ReceiptHandle,
-					})
-					return e
+					return m.changeMessageVisibility(message, consumerErr.RetryAfter())
 				})
 				continue
 			}
 		}
+		// delete message if no error, or error is a permanent, non-retryable error
 		m.ackMessage(ctx, func() error {
-			var _, e = m.Queue.DeleteMessage(&sqs.DeleteMessageInput{
-				QueueUrl:      aws.String(m.QueueURL),
-				ReceiptHandle: message.ReceiptHandle,
-			})
-			return e
+			return m.deleteMessage(message)
 		})
 	}
 }
 
-// GetSQSMessageConsumer returns the MessageConsumer field. This function implies that
-// DefaultSQSQueueConsumer MUST have a MessageConsumer defined.
-func (m *SmartSQSConsumer) GetSQSMessageConsumer() SQSMessageConsumer {
-	return m.MessageConsumer
+// getApproximateReceiveCount is a helper function for retrieving the ApproximateReceiveCount
+// Attribute of an SQS message
+func getApproximateReceiveCount(message *sqs.Message) uint64 {
+	receiveCountString := *(message.Attributes["ApproximateReceiveCount"])
+	receiveCount, _ := strconv.ParseInt(receiveCountString, 10, 64)
+	return uint64(receiveCount)
 }
 
+// deleteMessage is a helper method for deletion of an SQS message
+func (m *SmartSQSConsumer) deleteMessage(message *sqs.Message) error {
+	var _, e = m.Queue.DeleteMessage(&sqs.DeleteMessageInput{
+		QueueUrl:      aws.String(m.QueueURL),
+		ReceiptHandle: message.ReceiptHandle,
+	})
+	return e
+}
+
+// changeMessageVisibility is a helper method for changing message visibility of an SQS message
+func (m *SmartSQSConsumer) changeMessageVisibility(message *sqs.Message, timeout int64) error {
+	var _, e = m.Queue.ChangeMessageVisibility(&sqs.ChangeMessageVisibilityInput{
+		QueueUrl:          aws.String(m.QueueURL),
+		ReceiptHandle:     message.ReceiptHandle,
+		VisibilityTimeout: &timeout,
+	})
+	return e
+}
+
+// ackMessage handles acknowledgement of sqs messages. This method takes in an ack callback,
+// which when called, handles the specific action to be placed on an sqs message
 func (m *SmartSQSConsumer) ackMessage(ctx context.Context, ack func() error) {
 	logger := m.LogFn(ctx)
 
@@ -237,6 +255,12 @@ func (m *SmartSQSConsumer) ackMessage(ctx context.Context, ack func() error) {
 		}
 		break
 	}
+}
+
+// GetSQSMessageConsumer returns the MessageConsumer field. This function implies that
+// DefaultSQSQueueConsumer MUST have a MessageConsumer defined.
+func (m *SmartSQSConsumer) GetSQSMessageConsumer() SQSMessageConsumer {
+	return m.MessageConsumer
 }
 
 // StopConsuming stops this DefaultSQSQueueConsumer consuming from the SQS queue

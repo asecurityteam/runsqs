@@ -100,10 +100,10 @@ func (m *MockSQSMessageConsumer) EXPECT() *MockSQSMessageConsumerMockRecorder {
 }
 
 // ConsumeMessage mocks base method
-func (m *MockSQSMessageConsumer) ConsumeMessage(ctx context.Context, message *sqs.Message) error {
+func (m *MockSQSMessageConsumer) ConsumeMessage(ctx context.Context, message *sqs.Message) SQSMessageConsumerError {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ConsumeMessage", ctx, message)
-	ret0, _ := ret[0].(error)
+	ret0, _ := ret[0].(SQSMessageConsumerError)
 	return ret0
 }
 
@@ -111,6 +111,71 @@ func (m *MockSQSMessageConsumer) ConsumeMessage(ctx context.Context, message *sq
 func (mr *MockSQSMessageConsumerMockRecorder) ConsumeMessage(ctx, message interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConsumeMessage", reflect.TypeOf((*MockSQSMessageConsumer)(nil).ConsumeMessage), ctx, message)
+}
+
+// MockSQSMessageConsumerError is a mock of SQSMessageConsumerError interface
+type MockSQSMessageConsumerError struct {
+	ctrl     *gomock.Controller
+	recorder *MockSQSMessageConsumerErrorMockRecorder
+}
+
+// MockSQSMessageConsumerErrorMockRecorder is the mock recorder for MockSQSMessageConsumerError
+type MockSQSMessageConsumerErrorMockRecorder struct {
+	mock *MockSQSMessageConsumerError
+}
+
+// NewMockSQSMessageConsumerError creates a new mock instance
+func NewMockSQSMessageConsumerError(ctrl *gomock.Controller) *MockSQSMessageConsumerError {
+	mock := &MockSQSMessageConsumerError{ctrl: ctrl}
+	mock.recorder = &MockSQSMessageConsumerErrorMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use
+func (m *MockSQSMessageConsumerError) EXPECT() *MockSQSMessageConsumerErrorMockRecorder {
+	return m.recorder
+}
+
+// IsRetryable mocks base method
+func (m *MockSQSMessageConsumerError) IsRetryable() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsRetryable")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsRetryable indicates an expected call of IsRetryable
+func (mr *MockSQSMessageConsumerErrorMockRecorder) IsRetryable() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsRetryable", reflect.TypeOf((*MockSQSMessageConsumerError)(nil).IsRetryable))
+}
+
+// Error mocks base method
+func (m *MockSQSMessageConsumerError) Error() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Error")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// Error indicates an expected call of Error
+func (mr *MockSQSMessageConsumerErrorMockRecorder) Error() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Error", reflect.TypeOf((*MockSQSMessageConsumerError)(nil).Error))
+}
+
+// RetryAfter mocks base method
+func (m *MockSQSMessageConsumerError) RetryAfter() int64 {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RetryAfter")
+	ret0, _ := ret[0].(int64)
+	return ret0
+}
+
+// RetryAfter indicates an expected call of RetryAfter
+func (mr *MockSQSMessageConsumerErrorMockRecorder) RetryAfter() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RetryAfter", reflect.TypeOf((*MockSQSMessageConsumerError)(nil).RetryAfter))
 }
 
 // MockSQSProducer is a mock of SQSProducer interface

@@ -9,6 +9,12 @@ import (
 	"github.com/aws/aws-sdk-go/service/sqs"
 )
 
+const (
+	defaultNumWorkers      = 1
+	defaultMessagePoolSize = 1
+	defaultMaxRetries      = 3
+)
+
 // DefaultSQSQueueConsumerConfig represents the configuration to configure DefaultSQSQueueConsumer
 type DefaultSQSQueueConsumerConfig struct {
 	AWSEndpoint string
@@ -57,6 +63,7 @@ type SmartSQSQueueConsumerConfig struct {
 	QueueRegion     string
 	NumWorkers      uint64
 	MessagePoolSize uint64
+	MaxRetries      uint64
 }
 
 // Name of the configuration
@@ -66,8 +73,6 @@ func (*SmartSQSQueueConsumerConfig) Name() string {
 
 // SmartSQSQueueConsumerComponent enables creating configured Component
 type SmartSQSQueueConsumerComponent struct {
-	NumWorkers      uint64
-	MessagePoolSize uint64
 }
 
 // NewSmartSQSQueueConsumerComponent generates a new SmartSQSQueueConsumerComponent
@@ -77,7 +82,11 @@ func NewSmartSQSQueueConsumerComponent() *SmartSQSQueueConsumerComponent {
 
 // Settings generates the default configuration for DefaultSQSQueueConsumerComponent
 func (c *SmartSQSQueueConsumerComponent) Settings() *SmartSQSQueueConsumerConfig {
-	return &SmartSQSQueueConsumerConfig{}
+	return &SmartSQSQueueConsumerConfig{
+		NumWorkers:      defaultNumWorkers,
+		MessagePoolSize: defaultMessagePoolSize,
+		MaxRetries:      defaultMaxRetries,
+	}
 }
 
 // New creates a configured SmartSQSConsumer
@@ -95,5 +104,6 @@ func (c *SmartSQSQueueConsumerComponent) New(ctx context.Context, config *SmartS
 		Queue:           q,
 		NumWorkers:      config.NumWorkers,
 		MessagePoolSize: config.MessagePoolSize,
+		MaxRetries:      config.MaxRetries,
 	}, nil
 }
