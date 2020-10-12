@@ -384,9 +384,8 @@ func TestSmartSQSConsumer_MaxRetries(t *testing.T) {
 	mockMessageConsumer.EXPECT().ConsumeMessage(gomock.Any(), secondSQSMessage).Return(mockSQSMessageConsumerError)
 	mockMessageConsumer.EXPECT().ConsumeMessage(gomock.Any(), thirdSQSMessage).Return(mockSQSMessageConsumerError)
 
-	mockSQSMessageConsumerError.EXPECT().IsRetryable().Return(true).Times(2)
+	mockSQSMessageConsumerError.EXPECT().IsRetryable().Return(true).Times(3)
 	mockSQSMessageConsumerError.EXPECT().RetryAfter().Return(int64(3)).Times(2)
-	mockSQSMessageConsumerError.EXPECT().IsRetryable().Return(false).Times(1)
 
 	mockQueue.EXPECT().ChangeMessageVisibility(gomock.Any()).DoAndReturn(func(interface{}) (*sqs.ChangeMessageVisibilityOutput, error) {
 		testBlocker.Done()
