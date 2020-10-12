@@ -2,7 +2,6 @@ package runsqs
 
 import (
 	"context"
-	"errors"
 	"math"
 	"sync"
 	"testing"
@@ -233,6 +232,7 @@ func TestSmartSQSConsumer_ConsumeMessageFailures(t *testing.T) {
 	mockQueue := NewMockSQSAPI(ctrl)
 	mockLogger := NewMockLogger(ctrl)
 	mockMessageConsumer := NewMockSQSMessageConsumer(ctrl)
+	mockSQSMessageConsumerError := NewMockSQSMessageConsumerError(ctrl)
 
 	// testBlocker is used to make this test deterministic(avoid timeouts)
 	var testBlocker sync.WaitGroup
@@ -254,7 +254,7 @@ func TestSmartSQSConsumer_ConsumeMessageFailures(t *testing.T) {
 		},
 	}
 	messages1 := []*sqs.Message{}
-	for i := 0; i < 2; i++ {
+	for i := 0; i < 1; i++ {
 		messages1 = append(messages1, firstSQSMessage)
 	}
 
@@ -262,7 +262,7 @@ func TestSmartSQSConsumer_ConsumeMessageFailures(t *testing.T) {
 		Messages: messages1,
 	}
 
-	secondReceiveCount := "2"
+	secondReceiveCount := "1"
 	secondSQSMessage := &sqs.Message{
 		Body:          aws.String("body"),
 		ReceiptHandle: aws.String("receipt"),
@@ -281,24 +281,24 @@ func TestSmartSQSConsumer_ConsumeMessageFailures(t *testing.T) {
 	mockQueue.EXPECT().ReceiveMessage(sqsInputWithReceiveCount).Return(receiveMessageOutput1, nil)
 	mockQueue.EXPECT().ReceiveMessage(sqsInputWithReceiveCount).Return(receiveMessageOutput2, nil)
 
-	mockMessageConsumer.EXPECT().ConsumeMessage(gomock.Any(), firstSQSMessage).Return(RetryableConsumerError{})
-	mockMessageConsumer.EXPECT().ConsumeMessage(gomock.Any(), firstSQSMessage).Return(errors.New("a permanent error"))
-	mockMessageConsumer.EXPECT().ConsumeMessage(gomock.Any(), secondSQSMessage).Return(nil)
+	mockMessageConsumer.EXPECT().ConsumeMessage(gomock.Any(), firstSQSMessage).Return(mockSQSMessageConsumerError)
+	mockMessageConsumer.EXPECT().ConsumeMessage(gomock.Any(), secondSQSMessage).Return(mockSQSMessageConsumerError)
+
+	mockSQSMessageConsumerError.EXPECT().IsRetryable().Return(true)
+	mockSQSMessageConsumerError.EXPECT().RetryAfter().Return(int64(3))
 
 	mockQueue.EXPECT().ChangeMessageVisibility(gomock.Any()).DoAndReturn(func(interface{}) (*sqs.ChangeMessageVisibilityOutput, error) {
 		testBlocker.Done()
 		return nil, nil
 	})
-	mockQueue.EXPECT().DeleteMessage(gomock.Any()).DoAndReturn(func(interface{}) (*sqs.DeleteMessageOutput, error) {
-		testBlocker.Done()
-		return nil, nil
-	})
+	mockSQSMessageConsumerError.EXPECT().IsRetryable().Return(false)
+
 	mockQueue.EXPECT().DeleteMessage(gomock.Any()).DoAndReturn(func(interface{}) (*sqs.DeleteMessageOutput, error) {
 		testBlocker.Done()
 		return nil, nil
 	})
 
-	testBlocker.Add(3)
+	testBlocker.Add(2)
 	go consumer.StartConsuming(context.Background())
 	testBlocker.Wait()
 	consumer.StopConsuming(context.Background())
@@ -314,6 +314,7 @@ func TestSmartSQSConsumer_MaxRetries(t *testing.T) {
 	mockQueue := NewMockSQSAPI(ctrl)
 	mockLogger := NewMockLogger(ctrl)
 	mockMessageConsumer := NewMockSQSMessageConsumer(ctrl)
+	mockSQSMessageConsumerError := NewMockSQSMessageConsumerError(ctrl)
 
 	// testBlocker is used to make this test deterministic(avoid timeouts)
 	var testBlocker sync.WaitGroup
@@ -379,9 +380,13 @@ func TestSmartSQSConsumer_MaxRetries(t *testing.T) {
 	mockQueue.EXPECT().ReceiveMessage(sqsInputWithReceiveCount).Return(receiveMessageOutput2, nil)
 	mockQueue.EXPECT().ReceiveMessage(sqsInputWithReceiveCount).Return(receiveMessageOutput3, nil)
 
-	mockMessageConsumer.EXPECT().ConsumeMessage(gomock.Any(), firstSQSMessage).Return(RetryableConsumerError{})
-	mockMessageConsumer.EXPECT().ConsumeMessage(gomock.Any(), secondSQSMessage).Return(RetryableConsumerError{})
-	mockMessageConsumer.EXPECT().ConsumeMessage(gomock.Any(), thirdSQSMessage).Return(RetryableConsumerError{})
+	mockMessageConsumer.EXPECT().ConsumeMessage(gomock.Any(), firstSQSMessage).Return(mockSQSMessageConsumerError)
+	mockMessageConsumer.EXPECT().ConsumeMessage(gomock.Any(), secondSQSMessage).Return(mockSQSMessageConsumerError)
+	mockMessageConsumer.EXPECT().ConsumeMessage(gomock.Any(), thirdSQSMessage).Return(mockSQSMessageConsumerError)
+
+	mockSQSMessageConsumerError.EXPECT().IsRetryable().Return(true).Times(2)
+	mockSQSMessageConsumerError.EXPECT().RetryAfter().Return(int64(3)).Times(2)
+	mockSQSMessageConsumerError.EXPECT().IsRetryable().Return(false).Times(1)
 
 	mockQueue.EXPECT().ChangeMessageVisibility(gomock.Any()).DoAndReturn(func(interface{}) (*sqs.ChangeMessageVisibilityOutput, error) {
 		testBlocker.Done()

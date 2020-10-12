@@ -21,7 +21,15 @@ type SQSConsumer interface {
 // should be consumer. Users are responsible for unmarshalling messages themselves,
 // and returning errors.
 type SQSMessageConsumer interface {
-	ConsumeMessage(ctx context.Context, message *sqs.Message) error
+	ConsumeMessage(ctx context.Context, message *sqs.Message) SQSMessageConsumerError
+}
+
+// SQSMessageConsumerError represents an error that can be used to indicate to the consumer that an error should be retried.
+// Note: RetryAfter should be expressed in seconds
+type SQSMessageConsumerError interface {
+	IsRetryable() bool
+	Error() string
+	RetryAfter() int64
 }
 
 // SQSProducer is an interface for producing messages to an aws sqs instance.

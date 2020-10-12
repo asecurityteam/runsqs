@@ -186,10 +186,9 @@ func (m *SmartSQSConsumer) StartConsuming(ctx context.Context) error {
 // the visibilitytimeout of a message to be the configured retryableErr.VisibilityTimeout
 func (m *SmartSQSConsumer) worker(ctx context.Context, messages <-chan *sqs.Message) {
 	for message := range messages {
-		err := m.GetSQSMessageConsumer().ConsumeMessage(ctx, message)
-		if err != nil {
-			switch err.(type) {
-			case RetryableConsumerError:
+		consumerErr := m.GetSQSMessageConsumer().ConsumeMessage(ctx, message)
+		if consumerErr != nil {
+			if consumerErr.IsRetryable() {
 				// check to see if we've reached the maximum number of retries allowed
 				receiveCount := getApproximateReceiveCount(message)
 				if receiveCount > m.MaxRetries {
@@ -199,19 +198,13 @@ func (m *SmartSQSConsumer) worker(ctx context.Context, messages <-chan *sqs.Mess
 					continue
 				}
 				// retry this message by changing visibility timeout of message
-				retryableErr := err.(RetryableConsumerError)
 				m.ackMessage(ctx, func() error {
-					return m.changeMessageVisibility(message, retryableErr.VisibilityTimeout)
-				})
-				continue
-			// by default, this implementation assumes this is a permanent error
-			default:
-				m.ackMessage(ctx, func() error {
-					return m.deleteMessage(message)
+					return m.changeMessageVisibility(message, consumerErr.RetryAfter())
 				})
 				continue
 			}
 		}
+		// delete message if no error, or error is a permanent, non-retryable error
 		m.ackMessage(ctx, func() error {
 			return m.deleteMessage(message)
 		})
