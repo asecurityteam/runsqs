@@ -69,6 +69,7 @@ func main() {
         Queue: queue,
         QueueURL: "www.aws.com/url/to/queue",
         MessageConsumer: BasicConsumer{"consooooom"},
+        LogFn: runsqs.LoggerFromContext,
     }
 
     producer := runsqs.DefaultSQSProducer{
@@ -76,7 +77,7 @@ func main() {
         QueueURL: "www.aws.com/url/to/queue",
     }
 
-    go producer.ProducerMessage([]byte("incoming sqs message"))
+    go producer.ProduceMessage([]byte("incoming sqs message"))
 
     // Run the SQS consumer.
     if err := consumer.StartConsuming(); err != nil {
