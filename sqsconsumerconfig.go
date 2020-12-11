@@ -51,6 +51,7 @@ func (c *DefaultSQSQueueConsumerComponent) New(ctx context.Context, config *Defa
 	})
 
 	return DefaultSQSQueueConsumer{
+		LogFn:    LoggerFromContext,
 		QueueURL: config.QueueURL,
 		Queue:    q,
 	}, nil
