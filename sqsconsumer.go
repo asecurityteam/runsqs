@@ -192,6 +192,7 @@ func (m *SmartSQSConsumer) worker(ctx context.Context, messages <-chan *sqs.Mess
 				// check to see if we've reached the maximum number of retries allowed
 				receiveCount := getApproximateReceiveCount(message)
 				if receiveCount > m.MaxRetries {
+					m.GetSQSMessageConsumer().DeadLetter(ctx, message)
 					m.ackMessage(ctx, func() error {
 						return m.deleteMessage(message)
 					})
