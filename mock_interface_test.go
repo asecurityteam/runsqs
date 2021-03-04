@@ -113,6 +113,18 @@ func (mr *MockSQSMessageConsumerMockRecorder) ConsumeMessage(ctx, message interf
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConsumeMessage", reflect.TypeOf((*MockSQSMessageConsumer)(nil).ConsumeMessage), ctx, message)
 }
 
+// DeadLetter mocks base method
+func (m *MockSQSMessageConsumer) DeadLetter(ctx context.Context, message *sqs.Message) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "DeadLetter", ctx, message)
+}
+
+// DeadLetter indicates an expected call of DeadLetter
+func (mr *MockSQSMessageConsumerMockRecorder) DeadLetter(ctx, message interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeadLetter", reflect.TypeOf((*MockSQSMessageConsumer)(nil).DeadLetter), ctx, message)
+}
+
 // MockSQSMessageConsumerError is a mock of SQSMessageConsumerError interface
 type MockSQSMessageConsumerError struct {
 	ctrl     *gomock.Controller

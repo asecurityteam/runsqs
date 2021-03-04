@@ -88,9 +88,9 @@ func TestDefaultSQSQueueConsumer_GoldenPath(t *testing.T) {
 	mockQueue.EXPECT().ReceiveMessage(sqsInput).Return(sqsEmptyMessageOutput, nil).AnyTimes()
 
 	testBlocker.Add(5)
-	go consumer.StartConsuming(context.Background())
+	go consumer.StartConsuming(context.Background()) // nolint
 	testBlocker.Wait()
-	consumer.StopConsuming(context.Background())
+	consumer.StopConsuming(context.Background()) // nolint
 
 }
 
@@ -125,9 +125,9 @@ func TestDefaultSQSQueueConsumer_ReceivingMessageFailure(t *testing.T) {
 		return sqsEmptyMessageOutput, nil
 	}).AnyTimes()
 	testBlocker.Add(1)
-	go consumer.StartConsuming(context.Background())
+	go consumer.StartConsuming(context.Background()) // nolint
 	testBlocker.Wait()
-	consumer.StopConsuming(context.Background())
+	consumer.StopConsuming(context.Background()) // nolint
 
 }
 
@@ -177,9 +177,9 @@ func TestSmartSQSConsumer_GoldenPath(t *testing.T) {
 	mockQueue.EXPECT().ReceiveMessage(sqsInputWithReceiveCount).Return(sqsEmptyMessageOutput, nil).AnyTimes()
 
 	testBlocker.Add(5000)
-	go consumer.StartConsuming(context.Background())
+	go consumer.StartConsuming(context.Background()) // nolint
 	testBlocker.Wait()
-	consumer.StopConsuming(context.Background())
+	consumer.StopConsuming(context.Background()) // nolint
 
 }
 
@@ -217,9 +217,9 @@ func TestSmartSQSConsumer_ReceivingMessageFailure(t *testing.T) {
 		return sqsEmptyMessageOutput, nil
 	}).AnyTimes()
 	testBlocker.Add(1)
-	go consumer.StartConsuming(context.Background())
+	go consumer.StartConsuming(context.Background()) // nolint
 	testBlocker.Wait()
-	consumer.StopConsuming(context.Background())
+	consumer.StopConsuming(context.Background()) // nolint
 
 }
 
@@ -299,9 +299,9 @@ func TestSmartSQSConsumer_ConsumeMessageFailures(t *testing.T) {
 	})
 
 	testBlocker.Add(2)
-	go consumer.StartConsuming(context.Background())
+	go consumer.StartConsuming(context.Background()) // nolint
 	testBlocker.Wait()
-	consumer.StopConsuming(context.Background())
+	consumer.StopConsuming(context.Background()) // nolint
 
 }
 
@@ -383,6 +383,7 @@ func TestSmartSQSConsumer_MaxRetries(t *testing.T) {
 	mockMessageConsumer.EXPECT().ConsumeMessage(gomock.Any(), firstSQSMessage).Return(mockSQSMessageConsumerError)
 	mockMessageConsumer.EXPECT().ConsumeMessage(gomock.Any(), secondSQSMessage).Return(mockSQSMessageConsumerError)
 	mockMessageConsumer.EXPECT().ConsumeMessage(gomock.Any(), thirdSQSMessage).Return(mockSQSMessageConsumerError)
+	mockMessageConsumer.EXPECT().DeadLetter(gomock.Any(), thirdSQSMessage)
 
 	mockSQSMessageConsumerError.EXPECT().IsRetryable().Return(true).Times(3)
 	mockSQSMessageConsumerError.EXPECT().RetryAfter().Return(int64(3)).Times(2)
@@ -403,9 +404,9 @@ func TestSmartSQSConsumer_MaxRetries(t *testing.T) {
 	})
 
 	testBlocker.Add(3)
-	go consumer.StartConsuming(context.Background())
+	go consumer.StartConsuming(context.Background()) // nolint
 	testBlocker.Wait()
-	consumer.StopConsuming(context.Background())
+	consumer.StopConsuming(context.Background()) // nolint
 
 }
 
@@ -451,8 +452,8 @@ func TestSmartSQSConsumer_ConsumeMessageAckFailure(t *testing.T) {
 	}).Times(1)
 	mockQueue.EXPECT().ReceiveMessage(sqsInputWithReceiveCount).Return(sqsEmptyMessageOutput, nil).AnyTimes()
 	testBlocker.Add(1)
-	go consumer.StartConsuming(context.Background())
+	go consumer.StartConsuming(context.Background()) // nolint
 	testBlocker.Wait()
-	consumer.StopConsuming(context.Background())
+	consumer.StopConsuming(context.Background()) // nolint
 
 }
