@@ -6,7 +6,7 @@ require (
 	github.com/asecurityteam/logevent v1.3.0
 	github.com/aws/aws-sdk-go v1.35.0
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/golang/mock v1.4.4
+	github.com/golang/mock v1.6.0
 	github.com/google/go-cmp v0.5.2 // indirect
 	github.com/justinas/alice v1.2.0 // indirect
 	github.com/kr/pretty v0.1.0 // indirect
