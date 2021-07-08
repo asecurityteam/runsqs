@@ -4,7 +4,7 @@ package runsqs
 // returns a SQSMessageConsumer.
 type ConsumerDecorator func(SQSMessageConsumer) SQSMessageConsumer
 
-// Chain is an ordered collection of ConsumerDecorator.
+// ConsumerChain is an ordered collection of ConsumerDecorator.
 type ConsumerChain []ConsumerDecorator
 
 // Apply wraps the given SQSMessageConsumer with the Decorator chain.
@@ -19,7 +19,7 @@ func (c ConsumerChain) Apply(base SQSMessageConsumer) SQSMessageConsumer {
 // returns a SQSProducer.
 type ProducerDecorator func(SQSProducer) SQSProducer
 
-// Chain is an ordered collection of Decorators.
+// ProducerChain is an ordered collection of Decorators.
 type ProducerChain []ProducerDecorator
 
 // Apply wraps the given SQSProducer with the Decorator chain.
