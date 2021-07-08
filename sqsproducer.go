@@ -12,11 +12,10 @@ type DefaultSQSProducer struct {
 	QueueURL string
 }
 
-// ProduceMessage produces a message to the configured sqs queue
-func (producer *DefaultSQSProducer) ProduceMessage(message []byte) error {
-	_, e := producer.Queue.SendMessage(&sqs.SendMessageInput{
-		QueueUrl:    aws.String(producer.QueueURL),
-		MessageBody: aws.String(string(message)),
-	})
+// ProduceMessage produces a message to the configured sqs queue,
+// along with setting the queueURL to use
+func (producer *DefaultSQSProducer) ProduceMessage(messageInput *sqs.SendMessageInput) error {
+	messageInput.QueueUrl = aws.String(producer.QueueURL)
+	_, e := producer.Queue.SendMessage(messageInput)
 	return e
 }

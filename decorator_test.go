@@ -7,7 +7,7 @@ import (
 	"gotest.tools/assert"
 )
 
-func TestDecorator(t *testing.T) {
+func TestConsumerDecorator(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -30,8 +30,37 @@ func TestDecorator(t *testing.T) {
 		return mockSQSMessageConsumer2
 	}
 
-	chain := Chain([]Decorator{decorator2, decorator1})
+	chain := ConsumerChain([]ConsumerDecorator{decorator2, decorator1})
 
 	chain.Apply(mockSQSMessageConsumerBase)
+
+}
+
+func TestProducerDecorator(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	counter := 0
+
+	producer1 := NewMockSQSProducer(ctrl)
+	producer2 := NewMockSQSProducer(ctrl)
+
+	base := NewMockSQSProducer(ctrl)
+
+	decorator1 := func(SQSProducer) SQSProducer {
+		// these assertions asserts the order of decorators applied
+		assert.Equal(t, counter, 0)
+		counter++
+		return producer1
+	}
+
+	decorator2 := func(SQSProducer) SQSProducer {
+		assert.Equal(t, counter, 1)
+		return producer2
+	}
+
+	chain := ProducerChain([]ProducerDecorator{decorator2, decorator1})
+
+	chain.Apply(base)
 
 }
