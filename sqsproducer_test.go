@@ -1,6 +1,7 @@
 package runsqs
 
 import (
+	"context"
 	"errors"
 	"testing"
 
@@ -22,7 +23,7 @@ func TestDefaultSQSProducer_ProduceMessage_Success(t *testing.T) {
 	mockQueue.EXPECT().SendMessage(&sqs.SendMessageInput{
 		QueueUrl: aws.String(producer.QueueURL),
 	}).Return(&sqs.SendMessageOutput{}, nil)
-	err := producer.ProduceMessage(sqsMessageInput)
+	err := producer.ProduceMessage(context.Background(), sqsMessageInput)
 	assert.Nil(t, err)
 }
 
@@ -39,6 +40,6 @@ func TestDefaultSQSProducer_ProduceMessage_Failure(t *testing.T) {
 	mockQueue.EXPECT().SendMessage(&sqs.SendMessageInput{
 		QueueUrl: aws.String(producer.QueueURL),
 	}).Return(&sqs.SendMessageOutput{}, errors.New("error"))
-	err := producer.ProduceMessage(sqsMessageInput)
+	err := producer.ProduceMessage(context.Background(), sqsMessageInput)
 	assert.NotNil(t, err)
 }

@@ -214,15 +214,15 @@ func (m *MockSQSProducer) EXPECT() *MockSQSProducerMockRecorder {
 }
 
 // ProduceMessage mocks base method
-func (m *MockSQSProducer) ProduceMessage(messageInput *sqs.SendMessageInput) error {
+func (m *MockSQSProducer) ProduceMessage(ctx context.Context, messageInput *sqs.SendMessageInput) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ProduceMessage", messageInput)
+	ret := m.ctrl.Call(m, "ProduceMessage", ctx, messageInput)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // ProduceMessage indicates an expected call of ProduceMessage
-func (mr *MockSQSProducerMockRecorder) ProduceMessage(messageInput interface{}) *gomock.Call {
+func (mr *MockSQSProducerMockRecorder) ProduceMessage(ctx, messageInput interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProduceMessage", reflect.TypeOf((*MockSQSProducer)(nil).ProduceMessage), messageInput)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProduceMessage", reflect.TypeOf((*MockSQSProducer)(nil).ProduceMessage), ctx, messageInput)
 }
