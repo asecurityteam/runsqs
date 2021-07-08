@@ -38,6 +38,7 @@ type SQSMessageConsumerError interface {
 // Implementors are responsible for placing messages on an sqs, and also:
 // - SQS connectivity
 // - error handling
+// - constructing the input *sqs.SendMessageInput
 type SQSProducer interface {
-	ProduceMessage(message []byte) error
+	ProduceMessage(messageInput *sqs.SendMessageInput) error
 }

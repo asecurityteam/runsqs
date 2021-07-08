@@ -18,12 +18,11 @@ func TestDefaultSQSProducer_ProduceMessage_Success(t *testing.T) {
 		Queue:    mockQueue,
 		QueueURL: "www.queueurl.com",
 	}
-	message := []byte("a message")
+	sqsMessageInput := &sqs.SendMessageInput{}
 	mockQueue.EXPECT().SendMessage(&sqs.SendMessageInput{
-		QueueUrl:    aws.String(producer.QueueURL),
-		MessageBody: aws.String(string(message)),
+		QueueUrl: aws.String(producer.QueueURL),
 	}).Return(&sqs.SendMessageOutput{}, nil)
-	err := producer.ProduceMessage(message)
+	err := producer.ProduceMessage(sqsMessageInput)
 	assert.Nil(t, err)
 }
 
@@ -35,11 +34,11 @@ func TestDefaultSQSProducer_ProduceMessage_Failure(t *testing.T) {
 		Queue:    mockQueue,
 		QueueURL: "www.queueurl.com",
 	}
-	message := []byte("a message")
+
+	sqsMessageInput := &sqs.SendMessageInput{}
 	mockQueue.EXPECT().SendMessage(&sqs.SendMessageInput{
-		QueueUrl:    aws.String(producer.QueueURL),
-		MessageBody: aws.String(string(message)),
+		QueueUrl: aws.String(producer.QueueURL),
 	}).Return(&sqs.SendMessageOutput{}, errors.New("error"))
-	err := producer.ProduceMessage(message)
+	err := producer.ProduceMessage(sqsMessageInput)
 	assert.NotNil(t, err)
 }
