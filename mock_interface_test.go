@@ -113,6 +113,18 @@ func (mr *MockSQSMessageConsumerMockRecorder) ConsumeMessage(ctx, message interf
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConsumeMessage", reflect.TypeOf((*MockSQSMessageConsumer)(nil).ConsumeMessage), ctx, message)
 }
 
+// DeadLetter mocks base method
+func (m *MockSQSMessageConsumer) DeadLetter(ctx context.Context, message *sqs.Message) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "DeadLetter", ctx, message)
+}
+
+// DeadLetter indicates an expected call of DeadLetter
+func (mr *MockSQSMessageConsumerMockRecorder) DeadLetter(ctx, message interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeadLetter", reflect.TypeOf((*MockSQSMessageConsumer)(nil).DeadLetter), ctx, message)
+}
+
 // MockSQSMessageConsumerError is a mock of SQSMessageConsumerError interface
 type MockSQSMessageConsumerError struct {
 	ctrl     *gomock.Controller
@@ -202,15 +214,15 @@ func (m *MockSQSProducer) EXPECT() *MockSQSProducerMockRecorder {
 }
 
 // ProduceMessage mocks base method
-func (m *MockSQSProducer) ProduceMessage(message []byte) error {
+func (m *MockSQSProducer) ProduceMessage(ctx context.Context, messageInput *sqs.SendMessageInput) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ProduceMessage", message)
+	ret := m.ctrl.Call(m, "ProduceMessage", ctx, messageInput)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // ProduceMessage indicates an expected call of ProduceMessage
-func (mr *MockSQSProducerMockRecorder) ProduceMessage(message interface{}) *gomock.Call {
+func (mr *MockSQSProducerMockRecorder) ProduceMessage(ctx, messageInput interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProduceMessage", reflect.TypeOf((*MockSQSProducer)(nil).ProduceMessage), message)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProduceMessage", reflect.TypeOf((*MockSQSProducer)(nil).ProduceMessage), ctx, messageInput)
 }

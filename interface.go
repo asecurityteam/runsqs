@@ -22,6 +22,8 @@ type SQSConsumer interface {
 // and returning errors.
 type SQSMessageConsumer interface {
 	ConsumeMessage(ctx context.Context, message *sqs.Message) SQSMessageConsumerError
+	// DeadLetter will be called when MaxRetries is exhausted, only in the SmartSQSConsumer
+	DeadLetter(ctx context.Context, message *sqs.Message)
 }
 
 // SQSMessageConsumerError represents an error that can be used to indicate to the consumer that an error should be retried.
@@ -36,6 +38,7 @@ type SQSMessageConsumerError interface {
 // Implementors are responsible for placing messages on an sqs, and also:
 // - SQS connectivity
 // - error handling
+// - constructing the input *sqs.SendMessageInput
 type SQSProducer interface {
-	ProduceMessage(message []byte) error
+	ProduceMessage(ctx context.Context, messageInput *sqs.SendMessageInput) error
 }
