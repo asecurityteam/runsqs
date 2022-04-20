@@ -228,16 +228,16 @@ func (mr *MockSQSProducerMockRecorder) ProduceMessage(ctx, messageInput interfac
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProduceMessage", reflect.TypeOf((*MockSQSProducer)(nil).ProduceMessage), ctx, messageInput)
 }
 
-// QueueUrl mocks base method.
-func (m *MockSQSProducer) QueueUrl() string {
+// QueueURL mocks base method.
+func (m *MockSQSProducer) QueueURL() string {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "QueueUrl")
+	ret := m.ctrl.Call(m, "QueueURL")
 	ret0, _ := ret[0].(string)
 	return ret0
 }
 
-// QueueUrl indicates an expected call of QueueUrl.
-func (mr *MockSQSProducerMockRecorder) QueueUrl() *gomock.Call {
+// QueueURL indicates an expected call of QueueURL.
+func (mr *MockSQSProducerMockRecorder) QueueURL() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueueUrl", reflect.TypeOf((*MockSQSProducer)(nil).QueueUrl))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueueURL", reflect.TypeOf((*MockSQSProducer)(nil).QueueURL))
 }
