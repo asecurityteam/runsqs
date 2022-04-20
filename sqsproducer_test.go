@@ -11,6 +11,17 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestDefaultSQSProducer_QueueUrl_Success(t *testing.T) {
+	var ctrl = gomock.NewController(t)
+	defer ctrl.Finish()
+	mockQueue := NewMockSQSAPI(ctrl)
+	producer := &DefaultSQSProducer{
+		Queue:    mockQueue,
+		QueueURL: "www.queueurl.com",
+	}
+	assert.Equal(t, "www.queueurl.com", producer.QueueUrl())
+}
+
 func TestDefaultSQSProducer_ProduceMessage_Success(t *testing.T) {
 	var ctrl = gomock.NewController(t)
 	defer ctrl.Finish()
