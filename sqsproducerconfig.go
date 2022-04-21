@@ -45,7 +45,7 @@ func (c *DefaultSQSProducerComponent) New(ctx context.Context, config *DefaultSQ
 	})
 
 	return DefaultSQSProducer{
-		QueueURL: config.QueueURL,
+		queueURL: config.QueueURL,
 		Queue:    q,
 	}, nil
 }
