@@ -41,6 +41,5 @@ type SQSMessageConsumerError interface {
 // - constructing the input *sqs.SendMessageInput
 type SQSProducer interface {
 	QueueURL() string
-	SetQueueURL(queueURL string)
 	ProduceMessage(ctx context.Context, messageInput *sqs.SendMessageInput) error
 }

@@ -14,14 +14,16 @@ type DefaultSQSProducer struct {
 	queueURL string
 }
 
+func NewDefaultSQSProducer(queue sqsiface.SQSAPI, url string) *DefaultSQSProducer {
+	return &DefaultSQSProducer{
+		Queue:    queue,
+		queueURL: url,
+	}
+}
+
 // QueueURL retrieves the queue URL used by the DefaultSQSProducer
 func (producer *DefaultSQSProducer) QueueURL() string {
 	return producer.queueURL
-}
-
-// SetQueueURL sets the queue URL to be used by the DefaultSQSProducer
-func (producer *DefaultSQSProducer) SetQueueURL(queueURL string) {
-	producer.queueURL = queueURL
 }
 
 // ProduceMessage produces a message to the configured sqs queue,
