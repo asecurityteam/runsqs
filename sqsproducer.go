@@ -14,6 +14,7 @@ type DefaultSQSProducer struct {
 	queueURL string
 }
 
+// NewDefaultSQSProducer initializes a new DefaultSQSProducer
 func NewDefaultSQSProducer(queue sqsiface.SQSAPI, url string) *DefaultSQSProducer {
 	return &DefaultSQSProducer{
 		Queue:    queue,
