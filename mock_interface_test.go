@@ -241,3 +241,15 @@ func (mr *MockSQSProducerMockRecorder) QueueURL() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueueURL", reflect.TypeOf((*MockSQSProducer)(nil).QueueURL))
 }
+
+// SetQueueURL mocks base method.
+func (m *MockSQSProducer) SetQueueURL(queueURL string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SetQueueURL", queueURL)
+}
+
+// SetQueueURL indicates an expected call of SetQueueURL.
+func (mr *MockSQSProducerMockRecorder) SetQueueURL(queueURL interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetQueueURL", reflect.TypeOf((*MockSQSProducer)(nil).SetQueueURL), queueURL)
+}

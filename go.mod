@@ -1,4 +1,4 @@
-module github.com/asecurityteam/runsqs/v2
+module github.com/asecurityteam/runsqs/v3
 
 go 1.13
 

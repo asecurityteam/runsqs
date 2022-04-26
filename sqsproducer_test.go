@@ -16,9 +16,9 @@ func TestDefaultSQSProducer_QueueUrl_Success(t *testing.T) {
 	defer ctrl.Finish()
 	mockQueue := NewMockSQSAPI(ctrl)
 	producer := &DefaultSQSProducer{
-		Queue:    mockQueue,
-		queueURL: "www.queueurl.com",
+		Queue: mockQueue,
 	}
+	producer.SetQueueURL("www.queueurl.com")
 	assert.Equal(t, "www.queueurl.com", producer.QueueURL())
 }
 
@@ -27,9 +27,9 @@ func TestDefaultSQSProducer_ProduceMessage_Success(t *testing.T) {
 	defer ctrl.Finish()
 	mockQueue := NewMockSQSAPI(ctrl)
 	producer := &DefaultSQSProducer{
-		Queue:    mockQueue,
-		queueURL: "www.queueurl.com",
+		Queue: mockQueue,
 	}
+	producer.SetQueueURL("www.queueurl.com")
 	sqsMessageInput := &sqs.SendMessageInput{}
 	mockQueue.EXPECT().SendMessage(&sqs.SendMessageInput{
 		QueueUrl: aws.String(producer.QueueURL()),
@@ -43,10 +43,10 @@ func TestDefaultSQSProducer_ProduceMessage_Failure(t *testing.T) {
 	defer ctrl.Finish()
 	mockQueue := NewMockSQSAPI(ctrl)
 	producer := &DefaultSQSProducer{
-		Queue:    mockQueue,
-		queueURL: "www.queueurl.com",
+		Queue: mockQueue,
 	}
 
+	producer.SetQueueURL("www.queueurl.com")
 	sqsMessageInput := &sqs.SendMessageInput{}
 	mockQueue.EXPECT().SendMessage(&sqs.SendMessageInput{
 		QueueUrl: aws.String(producer.QueueURL()),

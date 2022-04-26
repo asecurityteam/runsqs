@@ -19,6 +19,11 @@ func (producer *DefaultSQSProducer) QueueURL() string {
 	return producer.queueURL
 }
 
+// SetQueueURL sets the queue URL to be used by the DefaultSQSProducer
+func (producer *DefaultSQSProducer) SetQueueURL(queueURL string) {
+	producer.queueURL = queueURL
+}
+
 // ProduceMessage produces a message to the configured sqs queue,
 // along with setting the queueURL to use
 func (producer *DefaultSQSProducer) ProduceMessage(ctx context.Context, messageInput *sqs.SendMessageInput) error {
