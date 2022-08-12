@@ -115,7 +115,7 @@ func TestDefaultSQSQueueConsumer_ReceivingMessageFailure(t *testing.T) {
 
 	// 1 retryables, 1 error log
 	mockQueue.EXPECT().ReceiveMessage(sqsInput).Return(sqsEmptyMessageOutput, awserr.New("RequestThrottled", "test", nil))
-	mockLogger.EXPECT().Error(gomock.Any()).Times(1)
+	mockLogger.EXPECT().Warn(gomock.Any()).Times(1)
 	// non retryable
 	mockQueue.EXPECT().ReceiveMessage(sqsInput).Return(sqsEmptyMessageOutput, awserr.New("RequestCanceled", "test", nil))
 
@@ -207,7 +207,7 @@ func TestSmartSQSConsumer_ReceivingMessageFailure(t *testing.T) {
 
 	// 1 retryables, 1 error log
 	mockQueue.EXPECT().ReceiveMessage(sqsInputWithReceiveCount).Return(sqsEmptyMessageOutput, awserr.New("RequestThrottled", "test", nil))
-	mockLogger.EXPECT().Error(gomock.Any()).Times(1)
+	mockLogger.EXPECT().Warn(gomock.Any()).Times(1)
 	// non retryable
 	mockQueue.EXPECT().ReceiveMessage(sqsInputWithReceiveCount).Return(sqsEmptyMessageOutput, awserr.New("RequestCanceled", "test", nil))
 

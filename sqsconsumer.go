@@ -57,7 +57,7 @@ func (m *DefaultSQSQueueConsumer) StartConsuming(ctx context.Context) error {
 		})
 		if e != nil {
 			if !(request.IsErrorRetryable(e) || request.IsErrorThrottle(e)) {
-				logger.Error(e.Error())
+				logger.Warn(e.Error())
 			}
 			time.Sleep(1 * time.Second)
 			continue
@@ -165,7 +165,7 @@ func (m *SmartSQSConsumer) StartConsuming(ctx context.Context) error {
 		})
 		if e != nil {
 			if !(request.IsErrorRetryable(e) || request.IsErrorThrottle(e)) {
-				logger.Error(e.Error())
+				logger.Warn(e.Error())
 			}
 			time.Sleep(1 * time.Second)
 			continue
