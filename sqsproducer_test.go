@@ -57,7 +57,7 @@ func TestDefaultSQSProducer_BatchProduceMessage_Success(t *testing.T) {
 	mockQueue.EXPECT().SendMessageBatch(&sqs.SendMessageBatchInput{
 		QueueUrl: aws.String(producer.QueueURL()),
 	}).Return(&sqs.SendMessageBatchOutput{}, nil)
-	err := producer.BatchProduceMessage(context.Background(), sqsBatchMessageInput)
+	_, err := producer.BatchProduceMessage(context.Background(), sqsBatchMessageInput)
 	assert.Nil(t, err)
 }
 
@@ -71,6 +71,6 @@ func TestDefaultSQSProducer_BatchProduceMessage_Failure(t *testing.T) {
 	mockQueue.EXPECT().SendMessageBatch(&sqs.SendMessageBatchInput{
 		QueueUrl: aws.String(producer.QueueURL()),
 	}).Return(&sqs.SendMessageBatchOutput{}, errors.New("error"))
-	err := producer.BatchProduceMessage(context.Background(), sqsBatchMessageInput)
+	_, err := producer.BatchProduceMessage(context.Background(), sqsBatchMessageInput)
 	assert.NotNil(t, err)
 }

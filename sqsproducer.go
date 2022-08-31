@@ -37,8 +37,7 @@ func (producer *DefaultSQSProducer) ProduceMessage(ctx context.Context, messageI
 
 // BatchProduceMessage produces a batch of messages to the configured sqs queue,
 // along with setting the queueURL to use
-func (producer *DefaultSQSProducer) BatchProduceMessage(ctx context.Context, messageInput *sqs.SendMessageBatchInput) error {
+func (producer *DefaultSQSProducer) BatchProduceMessage(ctx context.Context, messageInput *sqs.SendMessageBatchInput) (*sqs.SendMessageBatchOutput, error) {
 	messageInput.QueueUrl = aws.String(producer.QueueURL())
-	_, e := producer.Queue.SendMessageBatch(messageInput)
-	return e
+	return producer.Queue.SendMessageBatch(messageInput)
 }
