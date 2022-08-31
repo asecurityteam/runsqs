@@ -77,7 +77,7 @@ func TestDefaultSQSProducer_BatchProduceMessage_Failure(t *testing.T) {
 	assert.Len(t, resp.Failed, 0)
 }
 
-func TestDefaultSQSProducer_BatchProduceMessage_Success_Failed_Items(t *testing.T) {
+func TestDefaultSQSProducer_BatchProduceMessage_Failed_Items(t *testing.T) {
 	var ctrl = gomock.NewController(t)
 	defer ctrl.Finish()
 	mockQueue := NewMockSQSAPI(ctrl)
