@@ -10,9 +10,10 @@ import (
 )
 
 const (
-	defaultNumWorkers      = 1
-	defaultMessagePoolSize = 1
-	defaultMaxRetries      = 3
+	defaultNumWorkers          = 1
+	defaultMessagePoolSize     = 1
+	defaultMaxRetries          = 3
+	defaultMaxNumberOfMessages = 1
 )
 
 // DefaultSQSQueueConsumerConfig represents the configuration to configure DefaultSQSQueueConsumer
@@ -59,12 +60,13 @@ func (c *DefaultSQSQueueConsumerComponent) New(ctx context.Context, config *Defa
 
 // SmartSQSQueueConsumerConfig represents the configuration to configure SmartSQSQueueConsumer
 type SmartSQSQueueConsumerConfig struct {
-	AWSEndpoint     string
-	QueueURL        string
-	QueueRegion     string
-	NumWorkers      uint64
-	MessagePoolSize uint64
-	MaxRetries      uint64
+	AWSEndpoint         string
+	QueueURL            string
+	QueueRegion         string
+	NumWorkers          uint64
+	MessagePoolSize     uint64
+	MaxNumberOfMessages uint64
+	MaxRetries          uint64
 }
 
 // Name of the configuration
@@ -84,9 +86,10 @@ func NewSmartSQSQueueConsumerComponent() *SmartSQSQueueConsumerComponent {
 // Settings generates the default configuration for DefaultSQSQueueConsumerComponent
 func (c *SmartSQSQueueConsumerComponent) Settings() *SmartSQSQueueConsumerConfig {
 	return &SmartSQSQueueConsumerConfig{
-		NumWorkers:      defaultNumWorkers,
-		MessagePoolSize: defaultMessagePoolSize,
-		MaxRetries:      defaultMaxRetries,
+		NumWorkers:          defaultNumWorkers,
+		MessagePoolSize:     defaultMessagePoolSize,
+		MaxRetries:          defaultMaxRetries,
+		MaxNumberOfMessages: defaultMaxNumberOfMessages,
 	}
 }
 
@@ -100,11 +103,12 @@ func (c *SmartSQSQueueConsumerComponent) New(ctx context.Context, config *SmartS
 	})
 
 	return SmartSQSConsumer{
-		LogFn:           LoggerFromContext,
-		QueueURL:        config.QueueURL,
-		Queue:           q,
-		NumWorkers:      config.NumWorkers,
-		MessagePoolSize: config.MessagePoolSize,
-		MaxRetries:      config.MaxRetries,
+		LogFn:               LoggerFromContext,
+		QueueURL:            config.QueueURL,
+		Queue:               q,
+		NumWorkers:          config.NumWorkers,
+		MessagePoolSize:     config.MessagePoolSize,
+		MaxNumberOfMessages: config.MaxNumberOfMessages,
+		MaxRetries:          config.MaxRetries,
 	}, nil
 }

@@ -115,14 +115,15 @@ func (m *DefaultSQSQueueConsumer) ackMessage(ctx context.Context, ack func() err
 // - a maximum number of retries to be placed on a retryable sqs message
 // - concurrent workers
 type SmartSQSConsumer struct {
-	Queue           sqsiface.SQSAPI
-	LogFn           LogFn
-	QueueURL        string
-	deactivate      chan bool
-	MessageConsumer SQSMessageConsumer
-	NumWorkers      uint64
-	MessagePoolSize uint64
-	MaxRetries      uint64
+	Queue               sqsiface.SQSAPI
+	LogFn               LogFn
+	QueueURL            string
+	deactivate          chan bool
+	MessageConsumer     SQSMessageConsumer
+	NumWorkers          uint64
+	MessagePoolSize     uint64
+	MaxNumberOfMessages uint64
+	MaxRetries          uint64
 }
 
 // StartConsuming starts consuming from the configured SQS queue
@@ -161,7 +162,8 @@ func (m *SmartSQSConsumer) StartConsuming(ctx context.Context) error {
 			MessageAttributeNames: aws.StringSlice([]string{
 				"All",
 			}),
-			WaitTimeSeconds: aws.Int64(int64(math.Ceil((15 * time.Second).Seconds()))),
+			MaxNumberOfMessages: aws.Int64(int64(m.MaxNumberOfMessages)),
+			WaitTimeSeconds:     aws.Int64(int64(math.Ceil((15 * time.Second).Seconds()))),
 		})
 		if e != nil {
 			if !(request.IsErrorRetryable(e) || request.IsErrorThrottle(e)) {
