@@ -35,7 +35,8 @@ var sqsInputWithReceiveCount = &sqs.ReceiveMessageInput{
 	MessageAttributeNames: aws.StringSlice([]string{
 		"All",
 	}),
-	WaitTimeSeconds: aws.Int64(int64(math.Ceil((15 * time.Second).Seconds()))),
+	MaxNumberOfMessages: aws.Int64(1),
+	WaitTimeSeconds:     aws.Int64(int64(math.Ceil((15 * time.Second).Seconds()))),
 }
 
 var sqsEmptyMessageOutput = &sqs.ReceiveMessageOutput{
@@ -148,13 +149,14 @@ func TestSmartSQSConsumer_GoldenPath(t *testing.T) {
 	// testBlocker is used to make this test deterministic(avoid timeouts)
 	var testBlocker sync.WaitGroup
 	var consumer = &SmartSQSConsumer{
-		LogFn:           func(context.Context) Logger { return mockLogger },
-		QueueURL:        queueURL,
-		Queue:           mockQueue,
-		MessageConsumer: mockMessageConsumer,
-		NumWorkers:      10,
-		MessagePoolSize: 100,
-		MaxRetries:      1,
+		LogFn:               func(context.Context) Logger { return mockLogger },
+		QueueURL:            queueURL,
+		Queue:               mockQueue,
+		MessageConsumer:     mockMessageConsumer,
+		NumWorkers:          10,
+		MessagePoolSize:     100,
+		MaxNumberOfMessages: 1,
+		MaxRetries:          1,
 	}
 
 	messages := []*sqs.Message{}
@@ -196,13 +198,14 @@ func TestSmartSQSConsumer_ReceivingMessageFailure(t *testing.T) {
 	// testBlocker is used to make this test deterministic(avoid timeouts)
 	var testBlocker sync.WaitGroup
 	var consumer = &SmartSQSConsumer{
-		LogFn:           func(context.Context) Logger { return mockLogger },
-		QueueURL:        queueURL,
-		Queue:           mockQueue,
-		MessageConsumer: mockMessageConsumer,
-		NumWorkers:      10,
-		MessagePoolSize: 100,
-		MaxRetries:      1,
+		LogFn:               func(context.Context) Logger { return mockLogger },
+		QueueURL:            queueURL,
+		Queue:               mockQueue,
+		MessageConsumer:     mockMessageConsumer,
+		NumWorkers:          10,
+		MessagePoolSize:     100,
+		MaxRetries:          1,
+		MaxNumberOfMessages: 1,
 	}
 
 	// 1 retryables, 1 error log
@@ -237,13 +240,14 @@ func TestSmartSQSConsumer_ConsumeMessageFailures(t *testing.T) {
 	// testBlocker is used to make this test deterministic(avoid timeouts)
 	var testBlocker sync.WaitGroup
 	var consumer = &SmartSQSConsumer{
-		LogFn:           func(context.Context) Logger { return mockLogger },
-		QueueURL:        queueURL,
-		Queue:           mockQueue,
-		MessageConsumer: mockMessageConsumer,
-		NumWorkers:      1,
-		MessagePoolSize: 1,
-		MaxRetries:      1,
+		LogFn:               func(context.Context) Logger { return mockLogger },
+		QueueURL:            queueURL,
+		Queue:               mockQueue,
+		MessageConsumer:     mockMessageConsumer,
+		NumWorkers:          1,
+		MessagePoolSize:     1,
+		MaxRetries:          1,
+		MaxNumberOfMessages: 1,
 	}
 	firstReceiveCount := "1"
 	firstSQSMessage := &sqs.Message{
@@ -319,13 +323,14 @@ func TestSmartSQSConsumer_MaxRetries(t *testing.T) {
 	// testBlocker is used to make this test deterministic(avoid timeouts)
 	var testBlocker sync.WaitGroup
 	var consumer = &SmartSQSConsumer{
-		LogFn:           func(context.Context) Logger { return mockLogger },
-		QueueURL:        queueURL,
-		Queue:           mockQueue,
-		MessageConsumer: mockMessageConsumer,
-		NumWorkers:      1,
-		MessagePoolSize: 1,
-		MaxRetries:      2,
+		LogFn:               func(context.Context) Logger { return mockLogger },
+		QueueURL:            queueURL,
+		Queue:               mockQueue,
+		MessageConsumer:     mockMessageConsumer,
+		NumWorkers:          1,
+		MessagePoolSize:     1,
+		MaxRetries:          2,
+		MaxNumberOfMessages: 1,
 	}
 	firstReceiveCount := "1"
 	firstSQSMessage := &sqs.Message{
@@ -422,13 +427,14 @@ func TestSmartSQSConsumer_ConsumeMessageAckFailure(t *testing.T) {
 	// testBlocker is used to make this test deterministic(avoid timeouts)
 	var testBlocker sync.WaitGroup
 	var consumer = &SmartSQSConsumer{
-		LogFn:           func(context.Context) Logger { return mockLogger },
-		QueueURL:        queueURL,
-		Queue:           mockQueue,
-		MessageConsumer: mockMessageConsumer,
-		NumWorkers:      10,
-		MessagePoolSize: 100,
-		MaxRetries:      1,
+		LogFn:               func(context.Context) Logger { return mockLogger },
+		QueueURL:            queueURL,
+		Queue:               mockQueue,
+		MessageConsumer:     mockMessageConsumer,
+		NumWorkers:          10,
+		MessagePoolSize:     100,
+		MaxRetries:          1,
+		MaxNumberOfMessages: 1,
 	}
 
 	messages := []*sqs.Message{}

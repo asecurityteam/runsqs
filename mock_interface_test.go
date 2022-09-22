@@ -228,11 +228,12 @@ func (mr *MockSQSProducerMockRecorder) QueueURL() *gomock.Call {
 }
 
 // BatchProduceMessage mocks base method
-func (m *MockSQSProducer) BatchProduceMessage(ctx context.Context, messageBatchInput *sqs.SendMessageBatchInput) error {
+func (m *MockSQSProducer) BatchProduceMessage(ctx context.Context, messageBatchInput *sqs.SendMessageBatchInput) (*sqs.SendMessageBatchOutput, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "BatchProduceMessage", ctx, messageBatchInput)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret0, _ := ret[0].(*sqs.SendMessageBatchOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // BatchProduceMessage indicates an expected call of BatchProduceMessage
