@@ -2,6 +2,7 @@ package runsqs
 
 import (
 	"context"
+	"fmt"
 	"math"
 	"strconv"
 	"sync"
@@ -330,9 +331,11 @@ func (m *ThroughputSQSConsumer) messageReceiveWorker(ctx context.Context, messag
 		case <-done:
 			// these close statements will cause all workers to eventually terminate
 			close(messagePool)
+			fmt.Println("done signal")
 			return nil
 		case <-m.deactivate:
 			close(messagePool)
+			fmt.Println("deactivate signal")
 			return nil
 		default:
 		}
@@ -358,10 +361,10 @@ func (m *ThroughputSQSConsumer) messageReceiveWorker(ctx context.Context, messag
 		// loop through every message, and queue each message onto messagePool.
 		// Because messagePool is a fixed buffered channel, there is potential for this to block.
 		// It's important to set MessagePoolSize to a high enough size to account for high sqs throughput
+
 		for _, message := range result.Messages {
 			messagePool <- message
 		}
-
 		time.Sleep(time.Duration(1) * time.Millisecond)
 	}
 }
