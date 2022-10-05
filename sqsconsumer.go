@@ -309,7 +309,7 @@ func (m *ThroughputSQSConsumer) StartConsuming(ctx context.Context) error {
 	}
 	// initialize all workers, pass in the pool of messages for each worker
 	// to consume from
-	for i := uint64(0); i < m.NumWorkers; i++ {
+	for i := uint64(0); i < m.NumMessageReceiveWorkers; i++ {
 		go m.messageReceiveWorker(ctx, messagePool, i)
 	}
 	mutex.Unlock()
