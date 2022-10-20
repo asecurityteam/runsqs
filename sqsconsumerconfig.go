@@ -3,6 +3,7 @@ package runsqs
 import (
 	"context"
 	"net/http"
+	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -10,6 +11,7 @@ import (
 )
 
 const (
+	defaultPollInterval        = 1000 // milliseconds
 	defaultNumWorkers          = 1
 	defaultMessagePoolSize     = 1
 	defaultMaxRetries          = 3
@@ -18,9 +20,10 @@ const (
 
 // DefaultSQSQueueConsumerConfig represents the configuration to configure DefaultSQSQueueConsumer
 type DefaultSQSQueueConsumerConfig struct {
-	AWSEndpoint string
-	QueueURL    string
-	QueueRegion string
+	AWSEndpoint  string
+	QueueURL     string
+	QueueRegion  string
+	PollInterval time.Duration
 }
 
 // Name of the configuration
@@ -39,7 +42,9 @@ func NewDefaultSQSQueueConsumerComponent() *DefaultSQSQueueConsumerComponent {
 
 // Settings generates the default configuration for DefaultSQSQueueConsumerComponent
 func (c *DefaultSQSQueueConsumerComponent) Settings() *DefaultSQSQueueConsumerConfig {
-	return &DefaultSQSQueueConsumerConfig{}
+	return &DefaultSQSQueueConsumerConfig{
+		PollInterval: defaultPollInterval * time.Millisecond,
+	}
 }
 
 // New creates a configured DefaultSQSQueueConsumer
@@ -67,6 +72,7 @@ type SmartSQSQueueConsumerConfig struct {
 	MessagePoolSize     uint64
 	MaxNumberOfMessages uint64
 	MaxRetries          uint64
+	PollInterval        time.Duration
 }
 
 // Name of the configuration
@@ -90,6 +96,7 @@ func (c *SmartSQSQueueConsumerComponent) Settings() *SmartSQSQueueConsumerConfig
 		MessagePoolSize:     defaultMessagePoolSize,
 		MaxRetries:          defaultMaxRetries,
 		MaxNumberOfMessages: defaultMaxNumberOfMessages,
+		PollInterval:        defaultPollInterval * time.Millisecond,
 	}
 }
 
@@ -110,5 +117,6 @@ func (c *SmartSQSQueueConsumerComponent) New(ctx context.Context, config *SmartS
 		MessagePoolSize:     config.MessagePoolSize,
 		MaxNumberOfMessages: config.MaxNumberOfMessages,
 		MaxRetries:          config.MaxRetries,
+		PollInterval:        config.PollInterval,
 	}, nil
 }
