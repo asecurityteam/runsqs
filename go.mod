@@ -1,6 +1,6 @@
 module github.com/asecurityteam/runsqs/v2
 
-go 1.13
+go 1.19
 
 require (
 	github.com/asecurityteam/logevent v1.6.1
