@@ -26,6 +26,8 @@ type DefaultSQSQueueConsumer struct {
 	QueueURL        string
 	deactivate      chan bool
 	MessageConsumer SQSMessageConsumer
+	// PollInterval defaults to 1 second
+	PollInterval time.Duration
 }
 
 // StartConsuming starts consuming from the configured SQS queue
@@ -59,7 +61,7 @@ func (m *DefaultSQSQueueConsumer) StartConsuming(ctx context.Context) error {
 			if !(request.IsErrorRetryable(e) || request.IsErrorThrottle(e)) {
 				logger.Error(e.Error())
 			}
-			time.Sleep(1 * time.Second)
+			time.Sleep(m.PollInterval)
 			continue
 		}
 		for _, message := range result.Messages {
@@ -102,7 +104,7 @@ func (m *DefaultSQSQueueConsumer) ackMessage(ctx context.Context, ack func() err
 				logger.Error(e.Error())
 				break
 			}
-			time.Sleep(1 * time.Second)
+			time.Sleep(m.PollInterval)
 			continue
 		}
 		break
@@ -124,6 +126,7 @@ type SmartSQSConsumer struct {
 	MessagePoolSize     uint64
 	MaxNumberOfMessages uint64
 	MaxRetries          uint64
+	PollInterval        time.Duration
 }
 
 // StartConsuming starts consuming from the configured SQS queue
@@ -169,7 +172,7 @@ func (m *SmartSQSConsumer) StartConsuming(ctx context.Context) error {
 			if !(request.IsErrorRetryable(e) || request.IsErrorThrottle(e)) {
 				logger.Error(e.Error())
 			}
-			time.Sleep(1 * time.Second)
+			time.Sleep(m.PollInterval)
 			continue
 		}
 		// loop through every message, and queue each message onto messagePool.
@@ -253,7 +256,7 @@ func (m *SmartSQSConsumer) ackMessage(ctx context.Context, ack func() error) {
 				logger.Error(e.Error())
 				break
 			}
-			time.Sleep(1 * time.Second)
+			time.Sleep(m.PollInterval)
 			continue
 		}
 		break
