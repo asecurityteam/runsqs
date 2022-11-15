@@ -288,6 +288,7 @@ type ThroughputSQSConsumer struct {
 	QueueURL                 string
 	deactivate               chan bool
 	MessageConsumer          SQSMessageConsumer
+	MessageTracker           MessageTracker
 	NumWorkers               uint64
 	NumMessageReceiveWorkers uint64
 	MessagePoolSize          uint64
@@ -375,6 +376,16 @@ func (m *ThroughputSQSConsumer) messageReceiveWorker(ctx context.Context, messag
 // the visibilitytimeout of a message to be the configured retryableErr.VisibilityTimeout
 func (m *ThroughputSQSConsumer) worker(ctx context.Context, messages <-chan *sqs.Message) {
 	for message := range messages {
+		con, err := m.MessageTracker.GetOrPutMessage(ctx, *message.MessageId)
+		if err != nil {
+			fmt.Println(err)
+			continue
+		}
+		if !con {
+			fmt.Println("message already found")
+			continue
+		}
+
 		consumerErr := m.GetSQSMessageConsumer().ConsumeMessage(ctx, message)
 		if consumerErr != nil {
 			if consumerErr.IsRetryable() {
@@ -383,6 +394,9 @@ func (m *ThroughputSQSConsumer) worker(ctx context.Context, messages <-chan *sqs
 				if receiveCount > m.MaxRetries {
 					m.GetSQSMessageConsumer().DeadLetter(ctx, message)
 					m.ackMessage(ctx, func() error {
+						if err := m.MessageTracker.UpdateMessageStatus(ctx, WaitingToRetry); err != nil {
+							return err
+						}
 						return m.deleteMessage(message)
 					})
 					continue
@@ -396,6 +410,9 @@ func (m *ThroughputSQSConsumer) worker(ctx context.Context, messages <-chan *sqs
 		}
 		// delete message if no error, or error is a permanent, non-retryable error
 		m.ackMessage(ctx, func() error {
+			if err := m.MessageTracker.UpdateMessageStatus(ctx, Completed); err != nil {
+				return err
+			}
 			return m.deleteMessage(message)
 		})
 	}

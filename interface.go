@@ -2,6 +2,7 @@ package runsqs
 
 import (
 	"context"
+	"time"
 
 	"github.com/aws/aws-sdk-go/service/sqs"
 )
@@ -43,4 +44,33 @@ type SQSProducer interface {
 	QueueURL() string
 	BatchProduceMessage(ctx context.Context, messageBatchInput *sqs.SendMessageBatchInput) (*sqs.SendMessageBatchOutput, error)
 	ProduceMessage(ctx context.Context, messageInput *sqs.SendMessageInput) error
+}
+
+// MessageTracker placeholder
+type MessageTrackerBackend interface {
+	GetMessage(ctx context.Context, id string) (*SQSMessage, error)
+	PutNewMessage(ctx context.Context, message *SQSMessage) error
+	UpdateMessageStatus(ctx context.Context, status MessageStatus) error
+}
+
+type MessageTracker interface {
+	GetOrPutMessage(ctx context.Context, id string) (bool, error)
+	UpdateMessageStatus(ctx context.Context, status MessageStatus) error
+}
+
+type MessageStatus string
+
+const (
+	Processing     MessageStatus = "processing"
+	Failed         MessageStatus = "failed"
+	WaitingToRetry MessageStatus = "waiting_to_retry"
+	Completed      MessageStatus = "completed"
+)
+
+// SQSMessage placeholder
+type SQSMessage struct {
+	ID        string        `json:"id"`
+	Status    MessageStatus `json:"status"`
+	UpdatedAt time.Time     `json:"updated_at"`
+	TTL       int64         `json:"ttl,omitempty"`
 }
