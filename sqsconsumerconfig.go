@@ -164,7 +164,7 @@ func (c *ThroughputSQSQueueConsumerComponent) New(ctx context.Context, config *T
 		LogFn:                    LoggerFromContext,
 		QueueURL:                 config.QueueURL,
 		Queue:                    q,
-		MessageTracker:           &MessageWorker{},
+		MessageTracker:           MessageWorker{},
 		NumWorkers:               config.NumWorkers,
 		NumMessageReceiveWorkers: config.NumMessageReceiveWorkers,
 		MessagePoolSize:          config.MessagePoolSize,

@@ -288,7 +288,7 @@ type ThroughputSQSConsumer struct {
 	QueueURL                 string
 	deactivate               chan bool
 	MessageConsumer          SQSMessageConsumer
-	MessageTracker           MessageTracker
+	MessageTracker           MessageWorker
 	NumWorkers               uint64
 	NumMessageReceiveWorkers uint64
 	MessagePoolSize          uint64
