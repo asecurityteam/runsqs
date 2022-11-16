@@ -27,6 +27,6 @@ func (mw *MessageWorker) GetOrPutMessage(ctx context.Context, id string) (bool, 
 	return true, nil
 }
 
-func (mw *MessageWorker) UpdateMessageStatus(ctx context.Context, status MessageStatus) error {
-	return mw.DB.UpdateMessageStatus(ctx, status)
+func (mw *MessageWorker) UpdateMessageStatus(ctx context.Context, id string, updated_at time.Time, status MessageStatus) error {
+	return mw.DB.UpdateMessageStatus(ctx, id, updated_at, status)
 }

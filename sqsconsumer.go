@@ -394,7 +394,7 @@ func (m *ThroughputSQSConsumer) worker(ctx context.Context, messages <-chan *sqs
 				if receiveCount > m.MaxRetries {
 					m.GetSQSMessageConsumer().DeadLetter(ctx, message)
 					m.ackMessage(ctx, func() error {
-						if err := m.MessageTracker.UpdateMessageStatus(ctx, WaitingToRetry); err != nil {
+						if err := m.MessageTracker.UpdateMessageStatus(ctx, *message.MessageId, time.Now(), WaitingToRetry); err != nil {
 							return err
 						}
 						return m.deleteMessage(message)
@@ -410,7 +410,7 @@ func (m *ThroughputSQSConsumer) worker(ctx context.Context, messages <-chan *sqs
 		}
 		// delete message if no error, or error is a permanent, non-retryable error
 		m.ackMessage(ctx, func() error {
-			if err := m.MessageTracker.UpdateMessageStatus(ctx, Completed); err != nil {
+			if err := m.MessageTracker.UpdateMessageStatus(ctx, *message.MessageId, time.Now(), Completed); err != nil {
 				return err
 			}
 			return m.deleteMessage(message)

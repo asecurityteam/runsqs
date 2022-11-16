@@ -50,12 +50,12 @@ type SQSProducer interface {
 type MessageTrackerBackend interface {
 	GetMessage(ctx context.Context, id string) (*SQSMessage, error)
 	PutNewMessage(ctx context.Context, message *SQSMessage) error
-	UpdateMessageStatus(ctx context.Context, status MessageStatus) error
+	UpdateMessageStatus(ctx context.Context, id string, updated_at time.Time, status MessageStatus) error
 }
 
 type MessageTracker interface {
 	GetOrPutMessage(ctx context.Context, id string) (bool, error)
-	UpdateMessageStatus(ctx context.Context, status MessageStatus) error
+	UpdateMessageStatus(ctx context.Context, id string, updated_at time.Time, status MessageStatus) error
 }
 
 type MessageStatus string
