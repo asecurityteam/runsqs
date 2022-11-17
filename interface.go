@@ -71,6 +71,6 @@ const (
 type SQSMessage struct {
 	ID        string        `json:"id"`
 	Status    MessageStatus `json:"status"`
-	UpdatedAt time.Time     `json:"updated_at"`
+	UpdatedAt int64         `json:"updated_at"`
 	TTL       int64         `json:"ttl,omitempty"`
 }
