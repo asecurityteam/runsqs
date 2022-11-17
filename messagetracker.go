@@ -2,6 +2,7 @@ package runsqs
 
 import (
 	"context"
+	"strconv"
 	"time"
 )
 
@@ -18,7 +19,7 @@ func (mw *MessageWorker) GetOrPutMessage(ctx context.Context, id string) (bool, 
 		mw.DB.PutNewMessage(ctx, &SQSMessage{
 			ID:        id,
 			Status:    Processing,
-			UpdatedAt: time.Now().Unix(),
+			UpdatedAt: strconv.Itoa(int(time.Now().Unix())),
 		})
 	} else if mm.Status == Processing || mm.Status == WaitingToRetry {
 		return false, nil
