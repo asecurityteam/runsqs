@@ -15,7 +15,6 @@ import (
 	"github.com/google/uuid"
 )
 
-// var snapshotMutex = &sync.Mutex{}
 var pollWorkerWaitGroup = &sync.WaitGroup{}
 var movingAverage = ewma.NewMovingAverage(1)
 
@@ -39,11 +38,6 @@ type DynamicSQSQueueConsumer struct {
 	MaxRetries               uint64
 }
 
-// type pollSnapshot struct {
-// 	messagecount int
-// 	timestamp    time.Time
-// }
-
 // StartConsuming starts consuming from the configured SQS queue
 func (m *DynamicSQSQueueConsumer) StartConsuming(ctx context.Context) error {
 	mutex.Lock()
@@ -63,11 +57,7 @@ func (m *DynamicSQSQueueConsumer) StartConsuming(ctx context.Context) error {
 	for i := uint64(0); i < m.NumWorkers; i++ {
 		go m.worker(ctx, messagePool)
 	}
-	// initialize all workers, pass in the pool of messages for each worker
-	// to consume from
-	// for i := uint64(0); i < m.NumMessageReceiveWorkers; i++ {
-	// 	go m.messageReceiveWorker(ctx, messagePool, i)
-	// }
+
 	mutex.Unlock()
 
 	return nil
@@ -93,7 +83,6 @@ func (m *DynamicSQSQueueConsumer) moderator(ctx context.Context, messagePool cha
 
 func (m *DynamicSQSQueueConsumer) pollWorkerManager(ctx context.Context, messagePool chan *sqs.Message) {
 	logger := m.LogFn(ctx)
-	// snapshots = make([]pollSnapshot, 100)
 	stopSlices := make([]chan bool, 0)
 
 	// start first poll worker
@@ -106,15 +95,11 @@ func (m *DynamicSQSQueueConsumer) pollWorkerManager(ctx context.Context, message
 		select {
 		case <-done:
 			scalingTicker.Stop()
-			// for _, closechan := range stopSlices {
-			// 	close(closechan)
-			// }
+			logger.Info("Poll worker manager received done signal ... exiting")
 			return
 		case <-m.deactivate:
 			scalingTicker.Stop()
-			// for _, closechan := range stopSlices {
-			// 	close(closechan)
-			// }
+			logger.Info("Poll worker manager received done signal ... exiting")
 			return
 		case <-scalingTicker.C:
 			logger.Info(fmt.Sprintln("Determining if pollWorkerManager should scale out or in"))
@@ -247,25 +232,7 @@ func (m *DynamicSQSQueueConsumer) worker(ctx context.Context, messages <-chan *s
 }
 
 func (m *DynamicSQSQueueConsumer) determinePollScaleout() bool {
-	// snapshotMutex.Lock()
-
-	// // clear old values so they arent included
-	// oldestIndex := 0
-	// for i, snapshot := range snapshots {
-	// 	if time.Since(snapshot.timestamp) > 60*time.Second {
-	// 		oldestIndex = i
-	// 	}
-	// }
-	// snapshots := snapshots[oldestIndex:]
-
-	// // calculate average message size
-	// messageTotal := 0
-	// for _, snapshot := range snapshots {
-	// 	messageTotal += snapshot.messagecount
-	// }
-	// snapshotMutex.Unlock()
-
-	return movingAverage.Value() > 5
+	return movingAverage.Value() > 8
 }
 
 // func (m *DynamicSQSQueueConsumer) addSnapshot(snapshot pollSnapshot) {
