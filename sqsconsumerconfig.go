@@ -115,60 +115,60 @@ func (c *SmartSQSQueueConsumerComponent) New(ctx context.Context, config *SmartS
 }
 
 // ThroughputSQSQueueConsumerConfig represents the configuration to configure SmartSQSQueueConsumer
-type ThroughputSQSQueueConsumerConfig struct {
-	AWSEndpoint              string
-	QueueURL                 string
-	QueueRegion              string
-	NumWorkers               uint64
-	NumMessageReceiveWorkers uint64
-	MessagePoolSize          uint64
-	MaxNumberOfMessages      uint64
-	MaxRetries               uint64
-}
+// type ThroughputSQSQueueConsumerConfig struct {
+// 	AWSEndpoint              string
+// 	QueueURL                 string
+// 	QueueRegion              string
+// 	NumWorkers               uint64
+// 	NumMessageReceiveWorkers uint64
+// 	MessagePoolSize          uint64
+// 	MaxNumberOfMessages      uint64
+// 	MaxRetries               uint64
+// }
 
-// Name of the configuration
-func (*ThroughputSQSQueueConsumerConfig) Name() string {
-	return "sqsworker"
-}
+// // Name of the configuration
+// func (*ThroughputSQSQueueConsumerConfig) Name() string {
+// 	return "sqsworker"
+// }
 
-// SmartSQSQueueConsumerComponent enables creating configured Component
-type ThroughputSQSQueueConsumerComponent struct {
-}
+// // SmartSQSQueueConsumerComponent enables creating configured Component
+// type ThroughputSQSQueueConsumerComponent struct {
+// }
 
-// NewSmartSQSQueueConsumerComponent generates a new SmartSQSQueueConsumerComponent
-func NewThroughputSQSQueueConsumerComponent() *ThroughputSQSQueueConsumerComponent {
-	return &ThroughputSQSQueueConsumerComponent{}
-}
+// // NewSmartSQSQueueConsumerComponent generates a new SmartSQSQueueConsumerComponent
+// func NewThroughputSQSQueueConsumerComponent() *ThroughputSQSQueueConsumerComponent {
+// 	return &ThroughputSQSQueueConsumerComponent{}
+// }
 
-// Settings generates the default configuration for DefaultSQSQueueConsumerComponent
-func (c *ThroughputSQSQueueConsumerComponent) Settings() *ThroughputSQSQueueConsumerConfig {
-	return &ThroughputSQSQueueConsumerConfig{
-		NumWorkers:               defaultNumWorkers,
-		NumMessageReceiveWorkers: defaultNumReceiveWorkers,
-		MessagePoolSize:          defaultMessagePoolSize,
-		MaxRetries:               defaultMaxRetries,
-		MaxNumberOfMessages:      defaultMaxNumberOfMessages,
-	}
-}
+// // Settings generates the default configuration for DefaultSQSQueueConsumerComponent
+// func (c *ThroughputSQSQueueConsumerComponent) Settings() *ThroughputSQSQueueConsumerConfig {
+// 	return &ThroughputSQSQueueConsumerConfig{
+// 		NumWorkers:               defaultNumWorkers,
+// 		NumMessageReceiveWorkers: defaultNumReceiveWorkers,
+// 		MessagePoolSize:          defaultMessagePoolSize,
+// 		MaxRetries:               defaultMaxRetries,
+// 		MaxNumberOfMessages:      defaultMaxNumberOfMessages,
+// 	}
+// }
 
-// New creates a configured ThroughputSQSConsumer
-func (c *ThroughputSQSQueueConsumerComponent) New(ctx context.Context, config *ThroughputSQSQueueConsumerConfig) (ThroughputSQSConsumer, error) {
-	var sesh = session.Must(session.NewSession())
-	q := sqs.New(sesh, &aws.Config{
-		Region:     aws.String(config.QueueRegion),
-		HTTPClient: http.DefaultClient,
-		Endpoint:   aws.String(config.AWSEndpoint),
-	})
+// // New creates a configured ThroughputSQSConsumer
+// func (c *ThroughputSQSQueueConsumerComponent) New(ctx context.Context, config *ThroughputSQSQueueConsumerConfig) (ThroughputSQSConsumer, error) {
+// 	var sesh = session.Must(session.NewSession())
+// 	q := sqs.New(sesh, &aws.Config{
+// 		Region:     aws.String(config.QueueRegion),
+// 		HTTPClient: http.DefaultClient,
+// 		Endpoint:   aws.String(config.AWSEndpoint),
+// 	})
 
-	return ThroughputSQSConsumer{
-		LogFn:                    LoggerFromContext,
-		QueueURL:                 config.QueueURL,
-		Queue:                    q,
-		MessageTracker:           MessageWorker{},
-		NumWorkers:               config.NumWorkers,
-		NumMessageReceiveWorkers: config.NumMessageReceiveWorkers,
-		MessagePoolSize:          config.MessagePoolSize,
-		MaxNumberOfMessages:      config.MaxNumberOfMessages,
-		MaxRetries:               config.MaxRetries,
-	}, nil
-}
+// 	return ThroughputSQSConsumer{
+// 		LogFn:    LoggerFromContext,
+// 		QueueURL: config.QueueURL,
+// 		Queue:    q,
+// 		// MessageTracker:           MessageWorker{},
+// 		NumWorkers:               config.NumWorkers,
+// 		NumMessageReceiveWorkers: config.NumMessageReceiveWorkers,
+// 		MessagePoolSize:          config.MessagePoolSize,
+// 		MaxNumberOfMessages:      config.MaxNumberOfMessages,
+// 		MaxRetries:               config.MaxRetries,
+// 	}, nil
+// }

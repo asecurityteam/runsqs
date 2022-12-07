@@ -1,3 +1,5 @@
+github.com/VividCortex/ewma v1.2.0 h1:f58SaIzcDXrSy3kWaHNvuJgJ3Nmz59Zji6XoJR/q1ow=
+github.com/VividCortex/ewma v1.2.0/go.mod h1:nz4BbCtbLyFDeC9SUHbtcT5644juEuWfUAUnGx7j5l4=
 github.com/asecurityteam/logevent v1.6.1 h1:D/V11UxgZMBrktTgL3ugRO4hKdBWkz/xLBlpqDq4PoM=
 github.com/asecurityteam/logevent v1.6.1/go.mod h1:wtopE0Pe+072poxy+lGBMah604Uu6/BVwFWRwKwF3TA=
 github.com/aws/aws-sdk-go v1.35.0 h1:Pxqn1MWNfBCNcX7jrXCCTfsKpg5ms2IMUMmmcGtYJuo=

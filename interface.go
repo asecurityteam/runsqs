@@ -2,7 +2,6 @@ package runsqs
 
 import (
 	"context"
-	"time"
 
 	"github.com/aws/aws-sdk-go/service/sqs"
 )
@@ -47,16 +46,16 @@ type SQSProducer interface {
 }
 
 // MessageTracker placeholder
-type MessageTrackerBackend interface {
-	GetMessage(ctx context.Context, id string) (*SQSMessage, error)
-	PutNewMessage(ctx context.Context, message *SQSMessage) error
-	UpdateMessageStatus(ctx context.Context, id string, updated_at time.Time, status MessageStatus) error
-}
+// type MessageTrackerBackend interface {
+// 	GetMessage(ctx context.Context, id string) (*SQSMessage, error)
+// 	PutNewMessage(ctx context.Context, message *SQSMessage) error
+// 	UpdateMessageStatus(ctx context.Context, id string, updated_at time.Time, status MessageStatus) error
+// }
 
-type MessageTracker interface {
-	GetOrPutMessage(ctx context.Context, id string) (bool, error)
-	UpdateMessageStatus(ctx context.Context, id string, updated_at time.Time, status MessageStatus) error
-}
+// type MessageTracker interface {
+// 	GetOrPutMessage(ctx context.Context, id string) (bool, error)
+// 	UpdateMessageStatus(ctx context.Context, id string, updated_at time.Time, status MessageStatus) error
+// }
 
 type MessageStatus string
 
