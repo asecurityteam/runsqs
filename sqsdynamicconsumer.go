@@ -50,7 +50,6 @@ func (m *DynamicSQSQueueConsumer) StartConsuming(ctx context.Context) error {
 
 	// initialize poll worker manager that will control and scale in and scale out of poll workers
 	go m.pollWorkerManager(ctx, messagePool)
-	// initialize all message workers
 
 	// initialize all workers, pass in the pool of messages for each worker
 	// to consume from
@@ -149,7 +148,6 @@ func (m *DynamicSQSQueueConsumer) pollWorker(ctx context.Context, messagePool ch
 		default:
 		}
 
-		sqsPollStartTime := time.Now()
 		var result, e = m.Queue.ReceiveMessage(&sqs.ReceiveMessageInput{
 			QueueUrl: aws.String(m.QueueURL),
 			AttributeNames: aws.StringSlice([]string{
@@ -173,7 +171,6 @@ func (m *DynamicSQSQueueConsumer) pollWorker(ctx context.Context, messagePool ch
 		// Because messagePool is a fixed buffered channel, there is potential for this to block.
 		// It's important to set MessagePoolSize to a high enough size to account for high sqs throughput
 
-		logger.Info(fmt.Sprintf("Poll worker %s polled for %s and received %d messages", workerID.String(), time.Since(sqsPollStartTime), len(result.Messages)))
 		movingAverage.Add(float64(len(result.Messages)))
 		for _, message := range result.Messages {
 			messagePool <- message
