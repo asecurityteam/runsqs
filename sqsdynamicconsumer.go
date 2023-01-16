@@ -24,12 +24,11 @@ var movingAverage = ewma.NewMovingAverage(1)
 // - a maximum number of retries to be placed on a retryable sqs message
 // - concurrent workers
 type DynamicSQSQueueConsumer struct {
-	Queue           sqsiface.SQSAPI
-	LogFn           LogFn
-	QueueURL        string
-	deactivate      chan bool
-	MessageConsumer SQSMessageConsumer
-	// MessageTracker           MessageWorker
+	Queue                    sqsiface.SQSAPI
+	LogFn                    LogFn
+	QueueURL                 string
+	deactivate               chan bool
+	MessageConsumer          SQSMessageConsumer
 	NumWorkers               uint64
 	NumMessageReceiveWorkers uint64
 	MessagePoolSize          uint64
@@ -186,16 +185,6 @@ func (m *DynamicSQSQueueConsumer) pollWorker(ctx context.Context, messagePool ch
 // the visibilitytimeout of a message to be the configured retryableErr.VisibilityTimeout
 func (m *DynamicSQSQueueConsumer) worker(ctx context.Context, messages <-chan *sqs.Message) {
 	for message := range messages {
-		// con, err := m.MessageTracker.GetOrPutMessage(ctx, *message.MessageId)
-		// if err != nil {
-		// 	fmt.Println(err)
-		// 	continue
-		// }
-		// if !con {
-		// 	fmt.Println("message already found")
-		// 	continue
-		// }
-
 		consumerErr := m.GetSQSMessageConsumer().ConsumeMessage(ctx, message)
 		if consumerErr != nil {
 			if consumerErr.IsRetryable() {
@@ -204,9 +193,6 @@ func (m *DynamicSQSQueueConsumer) worker(ctx context.Context, messages <-chan *s
 				if receiveCount > m.MaxRetries {
 					m.GetSQSMessageConsumer().DeadLetter(ctx, message)
 					m.ackMessage(ctx, func() error {
-						// if err := m.MessageTracker.UpdateMessageStatus(ctx, *message.MessageId, time.Now(), WaitingToRetry); err != nil {
-						// 	return err
-						// }
 						return m.deleteMessage(message)
 					})
 					continue
@@ -220,9 +206,6 @@ func (m *DynamicSQSQueueConsumer) worker(ctx context.Context, messages <-chan *s
 		}
 		// delete message if no error, or error is a permanent, non-retryable error
 		m.ackMessage(ctx, func() error {
-			// if err := m.MessageTracker.UpdateMessageStatus(ctx, *message.MessageId, time.Now(), Completed); err != nil {
-			// 	return err
-			// }
 			return m.deleteMessage(message)
 		})
 	}
@@ -231,18 +214,6 @@ func (m *DynamicSQSQueueConsumer) worker(ctx context.Context, messages <-chan *s
 func (m *DynamicSQSQueueConsumer) determinePollScaleout() bool {
 	return movingAverage.Value() > 8
 }
-
-// func (m *DynamicSQSQueueConsumer) addSnapshot(snapshot pollSnapshot) {
-// 	snapshotMutex.Lock()
-
-// 	if len(snapshots) > 99 {
-// 		fmt.Println("dropping first snapshot")
-// 		snapshots = snapshots[1:] // pop from front of slice
-// 	}
-// 	snapshots = append(snapshots, snapshot)
-
-// 	snapshotMutex.Unlock()
-// }
 
 func (m *DynamicSQSQueueConsumer) createNewPollWorker(ctx context.Context, stopSlices *[]chan bool, messagePool chan *sqs.Message) {
 	stopCh := make(chan bool)
