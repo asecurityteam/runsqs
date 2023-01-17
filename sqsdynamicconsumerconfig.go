@@ -35,7 +35,7 @@ func NewDynamicSQSQueueConsumerComponent() *DynamicSQSQueueConsumerComponent {
 	return &DynamicSQSQueueConsumerComponent{}
 }
 
-// Settings generates the default configuration for DefaultSQSQueueConsumerComponent
+// Settings generates the default configuration for DefaultDynamicSQSQueueConsumerConfig
 func (c *DynamicSQSQueueConsumerComponent) Settings() *DynamicSQSQueueConsumerConfig {
 	return &DynamicSQSQueueConsumerConfig{
 		NumWorkers:               defaultNumWorkers,
@@ -46,7 +46,7 @@ func (c *DynamicSQSQueueConsumerComponent) Settings() *DynamicSQSQueueConsumerCo
 	}
 }
 
-// New creates a configured ThroughputSQSConsumer
+// New creates a configured DynamicSQSConsumer
 func (c *DynamicSQSQueueConsumerComponent) New(ctx context.Context, config *DynamicSQSQueueConsumerConfig) (DynamicSQSQueueConsumer, error) {
 	var sesh = session.Must(session.NewSession())
 	q := sqs.New(sesh, &aws.Config{

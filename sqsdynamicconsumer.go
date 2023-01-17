@@ -18,7 +18,9 @@ import (
 var pollWorkerWaitGroup = &sync.WaitGroup{}
 var movingAverage = ewma.NewMovingAverage(1)
 
-// DynamicSQSConsumer is an implementation of an SQSConsumer.
+// DynamicSQSConsumer is an implementation of an SQSConsumer. It is a speciality consumer pattern that dynamically scales workers polling SQS based
+// upon a moving average of messages that were received in polling. Due to the nature of SQS, there is a possibility that duplicate messages occur.
+// It is important to make sure all business logic is idempotent as messages can only be promised at least once and not exactly once.
 // This implementation supports...
 // - retryable and non-retryable errors.
 // - a maximum number of retries to be placed on a retryable sqs message
@@ -82,11 +84,11 @@ func (m *DynamicSQSQueueConsumer) moderator(ctx context.Context, messagePool cha
 func (m *DynamicSQSQueueConsumer) pollWorkerManager(ctx context.Context, messagePool chan *sqs.Message) {
 	logger := m.LogFn(ctx)
 	stopSlices := make([]chan bool, 0)
+	done := ctx.Done()
 
 	// start first poll worker
 	m.createNewPollWorker(ctx, &stopSlices, messagePool)
 
-	done := ctx.Done()
 	scalingTicker := time.NewTicker(60 * time.Second)
 
 	for {
@@ -103,11 +105,11 @@ func (m *DynamicSQSQueueConsumer) pollWorkerManager(ctx context.Context, message
 			logger.Info(fmt.Sprintln("Determining if pollWorkerManager should scale out or in"))
 			if m.determinePollScaleout() {
 				// scale up
-				logger.Info("pollWorkerManager scaling up poll workers")
+				logger.Info("pollWorkerManager scaling up poll workers because moving average > 8")
 				m.createNewPollWorker(ctx, &stopSlices, messagePool)
 			} else {
 				// scale down
-				logger.Info("pollWorkerManager scaling down")
+				logger.Info("pollWorkerManager scaling down because moving average < 8")
 
 				if len(stopSlices) == 0 {
 					continue
@@ -120,7 +122,7 @@ func (m *DynamicSQSQueueConsumer) pollWorkerManager(ctx context.Context, message
 
 }
 
-// worker function represents a single "message worker." worker will infinitely process messages until
+// pollWorker function represents a single "message worker." worker will infinitely process messages until
 // messages is closed. worker is responsible for handling deletion of messages, or handling
 // messages that have retryable error. On the event of a retryable error, worker will change
 // the visibilitytimeout of a message to be the configured retryableErr.VisibilityTimeout
