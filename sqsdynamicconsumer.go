@@ -21,6 +21,7 @@ var movingAverage = ewma.NewMovingAverage(1)
 // DynamicSQSConsumer is an implementation of an SQSConsumer. It is a speciality consumer pattern that dynamically scales workers polling SQS based
 // upon a moving average of messages that were received in polling. Due to the nature of SQS, there is a possibility that duplicate messages occur.
 // It is important to make sure all business logic is idempotent as messages can only be promised at least once and not exactly once.
+// Please use caution when using this as this is an experimental feature and is unstable
 // This implementation supports...
 // - retryable and non-retryable errors.
 // - a maximum number of retries to be placed on a retryable sqs message
