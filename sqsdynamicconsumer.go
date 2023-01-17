@@ -15,10 +15,8 @@ import (
 	"github.com/google/uuid"
 )
 
-// var pollWorkerWaitGroup = &sync.WaitGroup{}
 var movingAverage = ewma.NewMovingAverage(1)
 var movingAverageMutex = &sync.Mutex{}
-var startupMutex = &sync.Mutex{}
 
 // DynamicSQSQueueConsumer is an implementation of an SQSConsumer. It is a speciality consumer pattern that dynamically scales workers polling SQS based
 // upon a moving average of messages that were received in polling. Due to the nature of SQS, there is a possibility that duplicate messages occur.
@@ -50,7 +48,6 @@ func (m *DynamicSQSQueueConsumer) StartConsuming(ctx context.Context) error {
 	messagePool := make(chan *sqs.Message, m.MessagePoolSize)
 
 	// initialize poll worker manager that will control and scale in and scale out of poll workers
-	startupMutex.Lock()
 	go m.pollWorkerManager(ctx, messagePool)
 
 	// initialize moderator routine
@@ -74,12 +71,10 @@ func (m *DynamicSQSQueueConsumer) moderator(ctx context.Context, messagePool cha
 	select {
 	case <-done:
 		// wait for senders to close
-		// pollWorkerWaitGroup.Wait()
 		close(messagePool)
 		return
 	case <-m.deactivate:
 		// wait for senders to close
-		// pollWorkerWaitGroup.Wait()
 		close(messagePool)
 		return
 	}
@@ -92,7 +87,6 @@ func (m *DynamicSQSQueueConsumer) pollWorkerManager(ctx context.Context, message
 
 	// start first poll worker
 	m.createNewPollWorker(ctx, &stopSlices, messagePool)
-	startupMutex.Unlock()
 
 	scalingTicker := time.NewTicker(60 * time.Second)
 
@@ -134,8 +128,6 @@ func (m *DynamicSQSQueueConsumer) pollWorkerManager(ctx context.Context, message
 func (m *DynamicSQSQueueConsumer) pollWorker(ctx context.Context, messagePool chan *sqs.Message, stopCh chan bool) {
 	logger := m.LogFn(ctx)
 	workerID := uuid.New()
-
-	// defer pollWorkerWaitGroup.Done()
 
 	var done = ctx.Done()
 	logger.Info(fmt.Sprintf("Poll worker %s started polling sqs", workerID.String()))
@@ -228,7 +220,6 @@ func (m *DynamicSQSQueueConsumer) createNewPollWorker(ctx context.Context, stopS
 	stopCh := make(chan bool)
 	*stopSlices = append(*stopSlices, stopCh)
 
-	// pollWorkerWaitGroup.Add(1)
 	go m.pollWorker(ctx, messagePool, stopCh)
 }
 
@@ -288,7 +279,6 @@ func (m *DynamicSQSQueueConsumer) StopConsuming(ctx context.Context) error {
 
 func addMovingAverage(messageCount int) {
 	movingAverageMutex.Lock()
+	defer movingAverageMutex.Unlock()
 	movingAverage.Add(float64(messageCount))
-	movingAverageMutex.Unlock()
-
 }
