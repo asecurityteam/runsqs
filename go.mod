@@ -3,7 +3,7 @@ module github.com/asecurityteam/runsqs/v2
 go 1.13
 
 require (
-	github.com/VividCortex/ewma v1.2.0 // indirect
+	github.com/VividCortex/ewma v1.2.0
 	github.com/asecurityteam/logevent v1.6.1
 	github.com/aws/aws-sdk-go v1.35.0
 	github.com/davecgh/go-spew v1.1.1 // indirect

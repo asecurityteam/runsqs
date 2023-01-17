@@ -23,7 +23,7 @@ type DynamicSQSQueueConsumerConfig struct {
 
 // Name of the configuration
 func (*DynamicSQSQueueConsumerConfig) Name() string {
-	return "sqsworker"
+	return defaultComponentName
 }
 
 // DynamicSQSQueueConsumerComponent enables creating configured Component

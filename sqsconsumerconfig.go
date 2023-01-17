@@ -15,6 +15,8 @@ const (
 	defaultMessagePoolSize     = 1
 	defaultMaxRetries          = 3
 	defaultMaxNumberOfMessages = 1
+
+	defaultComponentName = "sqsworker"
 )
 
 // DefaultSQSQueueConsumerConfig represents the configuration to configure DefaultSQSQueueConsumer
@@ -26,7 +28,7 @@ type DefaultSQSQueueConsumerConfig struct {
 
 // Name of the configuration
 func (*DefaultSQSQueueConsumerConfig) Name() string {
-	return "sqsworker"
+	return defaultComponentName
 }
 
 // DefaultSQSQueueConsumerComponent enables creating configured Component
@@ -72,7 +74,7 @@ type SmartSQSQueueConsumerConfig struct {
 
 // Name of the configuration
 func (*SmartSQSQueueConsumerConfig) Name() string {
-	return "sqsworker"
+	return defaultComponentName
 }
 
 // SmartSQSQueueConsumerComponent enables creating configured Component

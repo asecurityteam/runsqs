@@ -15,10 +15,12 @@ import (
 	"github.com/google/uuid"
 )
 
-var pollWorkerWaitGroup = &sync.WaitGroup{}
+// var pollWorkerWaitGroup = &sync.WaitGroup{}
 var movingAverage = ewma.NewMovingAverage(1)
+var movingAverageMutex = &sync.Mutex{}
+var startupMutex = &sync.Mutex{}
 
-// DynamicSQSConsumer is an implementation of an SQSConsumer. It is a speciality consumer pattern that dynamically scales workers polling SQS based
+// DynamicSQSQueueConsumer is an implementation of an SQSConsumer. It is a speciality consumer pattern that dynamically scales workers polling SQS based
 // upon a moving average of messages that were received in polling. Due to the nature of SQS, there is a possibility that duplicate messages occur.
 // It is important to make sure all business logic is idempotent as messages can only be promised at least once and not exactly once.
 // Please use caution when using this as this is an experimental feature and is unstable
@@ -47,11 +49,12 @@ func (m *DynamicSQSQueueConsumer) StartConsuming(ctx context.Context) error {
 	// messagePool represents a queue of messages that are waiting to be consumed
 	messagePool := make(chan *sqs.Message, m.MessagePoolSize)
 
+	// initialize poll worker manager that will control and scale in and scale out of poll workers
+	startupMutex.Lock()
+	go m.pollWorkerManager(ctx, messagePool)
+
 	// initialize moderator routine
 	go m.moderator(ctx, messagePool)
-
-	// initialize poll worker manager that will control and scale in and scale out of poll workers
-	go m.pollWorkerManager(ctx, messagePool)
 
 	// initialize all workers, pass in the pool of messages for each worker
 	// to consume from
@@ -71,12 +74,12 @@ func (m *DynamicSQSQueueConsumer) moderator(ctx context.Context, messagePool cha
 	select {
 	case <-done:
 		// wait for senders to close
-		pollWorkerWaitGroup.Wait()
+		// pollWorkerWaitGroup.Wait()
 		close(messagePool)
 		return
 	case <-m.deactivate:
 		// wait for senders to close
-		pollWorkerWaitGroup.Wait()
+		// pollWorkerWaitGroup.Wait()
 		close(messagePool)
 		return
 	}
@@ -89,6 +92,7 @@ func (m *DynamicSQSQueueConsumer) pollWorkerManager(ctx context.Context, message
 
 	// start first poll worker
 	m.createNewPollWorker(ctx, &stopSlices, messagePool)
+	startupMutex.Unlock()
 
 	scalingTicker := time.NewTicker(60 * time.Second)
 
@@ -127,12 +131,11 @@ func (m *DynamicSQSQueueConsumer) pollWorkerManager(ctx context.Context, message
 // messages is closed. worker is responsible for handling deletion of messages, or handling
 // messages that have retryable error. On the event of a retryable error, worker will change
 // the visibilitytimeout of a message to be the configured retryableErr.VisibilityTimeout
-func (m *DynamicSQSQueueConsumer) pollWorker(ctx context.Context, messagePool chan *sqs.Message, stopCh chan bool) error {
+func (m *DynamicSQSQueueConsumer) pollWorker(ctx context.Context, messagePool chan *sqs.Message, stopCh chan bool) {
 	logger := m.LogFn(ctx)
 	workerID := uuid.New()
 
-	pollWorkerWaitGroup.Add(1)
-	defer pollWorkerWaitGroup.Done()
+	// defer pollWorkerWaitGroup.Done()
 
 	var done = ctx.Done()
 	logger.Info(fmt.Sprintf("Poll worker %s started polling sqs", workerID.String()))
@@ -140,13 +143,13 @@ func (m *DynamicSQSQueueConsumer) pollWorker(ctx context.Context, messagePool ch
 		select {
 		case <-done:
 			logger.Info(fmt.Sprintf("Poll worker %s received done signal ... closing", workerID.String()))
-			return nil
+			return
 		case <-m.deactivate:
 			logger.Info(fmt.Sprintf("Poll worker %s received deactivate signal ... closing", workerID.String()))
-			return nil
+			return
 		case <-stopCh:
 			logger.Info(fmt.Sprintf("Poll worker %s received stopCH signal ... closing", workerID.String()))
-			return nil
+			return
 		default:
 		}
 
@@ -173,7 +176,7 @@ func (m *DynamicSQSQueueConsumer) pollWorker(ctx context.Context, messagePool ch
 		// Because messagePool is a fixed buffered channel, there is potential for this to block.
 		// It's important to set MessagePoolSize to a high enough size to account for high sqs throughput
 
-		movingAverage.Add(float64(len(result.Messages)))
+		addMovingAverage(len(result.Messages))
 		for _, message := range result.Messages {
 			messagePool <- message
 		}
@@ -215,13 +218,17 @@ func (m *DynamicSQSQueueConsumer) worker(ctx context.Context, messages <-chan *s
 }
 
 func (m *DynamicSQSQueueConsumer) determinePollScaleout() bool {
-	return movingAverage.Value() > 8
+	movingAverageMutex.Lock()
+	scaleOut := movingAverage.Value() > 8
+	movingAverageMutex.Unlock()
+	return scaleOut
 }
 
 func (m *DynamicSQSQueueConsumer) createNewPollWorker(ctx context.Context, stopSlices *[]chan bool, messagePool chan *sqs.Message) {
 	stopCh := make(chan bool)
 	*stopSlices = append(*stopSlices, stopCh)
 
+	// pollWorkerWaitGroup.Add(1)
 	go m.pollWorker(ctx, messagePool, stopCh)
 }
 
@@ -277,4 +284,11 @@ func (m *DynamicSQSQueueConsumer) StopConsuming(ctx context.Context) error {
 	}
 	mutex.Unlock()
 	return nil
+}
+
+func addMovingAverage(messageCount int) {
+	movingAverageMutex.Lock()
+	movingAverage.Add(float64(messageCount))
+	movingAverageMutex.Unlock()
+
 }

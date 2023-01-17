@@ -69,7 +69,7 @@ func TestDynamicSQSConsumer_GoldenPath(t *testing.T) {
 
 // TestSmartSQSConsumer_ReceivingMessageFailure tests whether it can retrieve 2 messages, both of them fail,
 // but only one is retryable. The non retryable causes a log.error
-func TestDynamicSQSConsumer_ReceivingMessageFailure(t *testing.T) {
+func TestDynamicSQSConsumer_ReceivgoingMessageFailure(t *testing.T) {
 	// mocks
 	var ctrl = gomock.NewController(t)
 	defer ctrl.Finish()
