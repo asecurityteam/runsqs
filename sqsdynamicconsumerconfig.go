@@ -31,7 +31,7 @@ type DynamicSQSQueueConsumerComponent struct {
 }
 
 // NewDynamicSQSQueueConsumerComponent generates a new DynamicSQSQueueConsumerComponent
-func NewTDynamicSQSQueueConsumerComponent() *DynamicSQSQueueConsumerComponent {
+func NewDynamicSQSQueueConsumerComponent() *DynamicSQSQueueConsumerComponent {
 	return &DynamicSQSQueueConsumerComponent{}
 }
 
@@ -56,10 +56,9 @@ func (c *DynamicSQSQueueConsumerComponent) New(ctx context.Context, config *Dyna
 	})
 
 	return DynamicSQSQueueConsumer{
-		LogFn:    LoggerFromContext,
-		QueueURL: config.QueueURL,
-		Queue:    q,
-		// MessageTracker:           MessageWorker{},
+		LogFn:                    LoggerFromContext,
+		QueueURL:                 config.QueueURL,
+		Queue:                    q,
 		NumWorkers:               config.NumWorkers,
 		NumMessageReceiveWorkers: config.NumMessageReceiveWorkers,
 		MessagePoolSize:          config.MessagePoolSize,
