@@ -1,8 +1,4 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": [
-    "config:base"
-  ],
-  "schedule": ["after 2pm on Tuesday"],
-  "timezone": "America/Chicago"
+  "extends": ["github>asecurityteam/renovate-config"]
 }
