@@ -4,7 +4,7 @@ go 1.13
 
 require (
 	github.com/asecurityteam/logevent v1.6.1
-	github.com/aws/aws-sdk-go v1.35.0
+	github.com/aws/aws-sdk-go v1.44.245
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/golang/mock v1.6.0
 	github.com/google/go-cmp v0.5.2 // indirect
