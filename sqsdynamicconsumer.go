@@ -38,6 +38,7 @@ type DynamicSQSQueueConsumer struct {
 	MaxNumberOfMessages      uint64
 	MaxNumPollWorkers        uint64
 	MaxRetries               uint64
+	ScalingTime              uint64
 }
 
 // StartConsuming starts consuming from the configured SQS queue
@@ -51,7 +52,7 @@ func (m *DynamicSQSQueueConsumer) StartConsuming(ctx context.Context) error {
 	go m.pollWorkerManager(ctx, messagePool)
 
 	// initialize moderator routine
-	go m.moderator(ctx, messagePool)
+	// go m.moderator(ctx, messagePool)
 
 	// initialize all workers, pass in the pool of messages for each worker
 	// to consume from
@@ -65,20 +66,20 @@ func (m *DynamicSQSQueueConsumer) StartConsuming(ctx context.Context) error {
 
 }
 
-func (m *DynamicSQSQueueConsumer) moderator(ctx context.Context, messagePool chan *sqs.Message) {
-	done := ctx.Done()
+// func (m *DynamicSQSQueueConsumer) moderator(ctx context.Context, messagePool chan *sqs.Message) {
+// 	done := ctx.Done()
 
-	select {
-	case <-done:
-		// wait for senders to close
-		close(messagePool)
-		return
-	case <-m.deactivate:
-		// wait for senders to close
-		close(messagePool)
-		return
-	}
-}
+// 	select {
+// 	case <-done:
+// 		// wait for senders to close
+// 		close(messagePool)
+// 		return
+// 	case <-m.deactivate:
+// 		// wait for senders to close
+// 		close(messagePool)
+// 		return
+// 	}
+// }
 
 func (m *DynamicSQSQueueConsumer) pollWorkerManager(ctx context.Context, messagePool chan *sqs.Message) {
 	logger := m.LogFn(ctx)
@@ -88,7 +89,7 @@ func (m *DynamicSQSQueueConsumer) pollWorkerManager(ctx context.Context, message
 	// start first poll worker
 	m.createNewPollWorker(ctx, &stopSlices, messagePool)
 
-	scalingTicker := time.NewTicker(60 * time.Second)
+	scalingTicker := time.NewTicker(time.Duration(m.ScalingTime) * time.Second)
 
 	for {
 		select {

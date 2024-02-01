@@ -38,6 +38,7 @@ func TestDynamicSQSConsumer_GoldenPath(t *testing.T) {
 		MaxRetries:               1,
 		NumMessageReceiveWorkers: 5,
 		MaxNumPollWorkers:        5,
+		ScalingTime:              60,
 	}
 
 	messages := []*sqs.Message{}
@@ -64,7 +65,56 @@ func TestDynamicSQSConsumer_GoldenPath(t *testing.T) {
 	consumer.StartConsuming(context.Background()) // nolint
 	testBlocker.Wait()
 	consumer.StopConsuming(context.Background()) // nolint
+}
 
+func TestDynamicSQSConsumer_TickerGoldenPath(t *testing.T) {
+	// mocks
+	var ctrl = gomock.NewController(t)
+	defer ctrl.Finish()
+	mockQueue := NewMockSQSAPI(ctrl)
+	mockLogger := NewMockLogger(ctrl)
+	mockMessageConsumer := NewMockSQSMessageConsumer(ctrl)
+
+	// testBlocker is used to make this test deterministic(avoid timeouts)
+	var testBlocker sync.WaitGroup
+	var consumer = &DynamicSQSQueueConsumer{
+		LogFn:                    func(context.Context) Logger { return mockLogger },
+		QueueURL:                 queueURL,
+		Queue:                    mockQueue,
+		MessageConsumer:          mockMessageConsumer,
+		NumWorkers:               10,
+		MessagePoolSize:          100,
+		MaxNumberOfMessages:      1,
+		MaxRetries:               1,
+		NumMessageReceiveWorkers: 5,
+		MaxNumPollWorkers:        5,
+		ScalingTime:              1,
+	}
+
+	messages := []*sqs.Message{}
+	for i := 0; i < 10000; i++ {
+		messages = append(messages, defaultSQSMessage)
+	}
+
+	receiveMessageOutput := &sqs.ReceiveMessageOutput{
+		Messages: messages,
+	}
+	// the following mocks test for exactly 5 successful message consumptions, no more no less
+	mockLogger.EXPECT().Info(gomock.Any()).AnyTimes()
+	mockQueue.EXPECT().ReceiveMessage(sqsInputWithReceiveCount).Return(receiveMessageOutput, nil).Times(5)
+	mockMessageConsumer.EXPECT().ConsumeMessage(gomock.Any(), defaultSQSMessage).Return(nil).Times(50000)
+	mockQueue.EXPECT().DeleteMessage(gomock.Any()).DoAndReturn(func(interface{}) (*sqs.DeleteMessageOutput, error) {
+		testBlocker.Done()
+		return nil, nil
+	}).Times(50000)
+
+	// infinitely ping empty sqs
+	mockQueue.EXPECT().ReceiveMessage(sqsInputWithReceiveCount).Return(sqsEmptyMessageOutput, nil).AnyTimes()
+
+	testBlocker.Add(50000)
+	consumer.StartConsuming(context.Background()) // nolint
+	testBlocker.Wait()
+	consumer.StopConsuming(context.Background()) // nolint
 }
 
 // TestSmartSQSConsumer_ReceivingMessageFailure tests whether it can retrieve 2 messages, both of them fail,
@@ -88,6 +138,7 @@ func TestDynamicSQSConsumer_ReceivgoingMessageFailure(t *testing.T) {
 		MessagePoolSize:     100,
 		MaxRetries:          1,
 		MaxNumberOfMessages: 1,
+		ScalingTime:         60,
 	}
 
 	// 1 retryables, 1 error log
@@ -131,6 +182,7 @@ func TestDynamicSQSConsumer_ConsumeMessageFailures(t *testing.T) {
 		MessagePoolSize:     1,
 		MaxRetries:          1,
 		MaxNumberOfMessages: 1,
+		ScalingTime:         60,
 	}
 	firstReceiveCount := "1"
 	firstSQSMessage := &sqs.Message{
@@ -216,6 +268,7 @@ func TestDynamicSQSConsumer_MaxRetries(t *testing.T) {
 		MessagePoolSize:     1,
 		MaxRetries:          2,
 		MaxNumberOfMessages: 1,
+		ScalingTime:         60,
 	}
 	firstReceiveCount := "1"
 	firstSQSMessage := &sqs.Message{
@@ -322,6 +375,7 @@ func TestDynamicSQSConsumer_ConsumeMessageAckFailure(t *testing.T) {
 		MessagePoolSize:     100,
 		MaxRetries:          1,
 		MaxNumberOfMessages: 1,
+		ScalingTime:         60,
 	}
 
 	messages := []*sqs.Message{}

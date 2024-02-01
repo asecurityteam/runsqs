@@ -15,6 +15,7 @@ const (
 	defaultMessagePoolSize     = 1
 	defaultMaxRetries          = 3
 	defaultMaxNumberOfMessages = 1
+	defaultScalingTime         = 60
 
 	defaultComponentName = "sqsworker"
 )

@@ -19,6 +19,7 @@ type DynamicSQSQueueConsumerConfig struct {
 	MessagePoolSize          uint64
 	MaxNumberOfMessages      uint64
 	MaxRetries               uint64
+	ScalingTime              uint64
 }
 
 // Name of the configuration
@@ -43,6 +44,7 @@ func (c *DynamicSQSQueueConsumerComponent) Settings() *DynamicSQSQueueConsumerCo
 		MessagePoolSize:          defaultMessagePoolSize,
 		MaxRetries:               defaultMaxRetries,
 		MaxNumberOfMessages:      defaultMaxNumberOfMessages,
+		ScalingTime:              defaultScalingTime,
 	}
 }
 
@@ -64,5 +66,6 @@ func (c *DynamicSQSQueueConsumerComponent) New(ctx context.Context, config *Dyna
 		MessagePoolSize:          config.MessagePoolSize,
 		MaxNumberOfMessages:      config.MaxNumberOfMessages,
 		MaxRetries:               config.MaxRetries,
+		ScalingTime:              config.ScalingTime,
 	}, nil
 }

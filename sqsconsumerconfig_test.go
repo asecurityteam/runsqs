@@ -36,3 +36,18 @@ func TestSmartSQSQueueConsumerConfig_Name(t *testing.T) {
 	config := component.Settings()
 	assert.Equal(t, config.Name(), "sqsworker")
 }
+
+func TestNewDynamicSQSQueueConsumerConfig(t *testing.T) {
+	component := NewDynamicSQSQueueConsumerComponent()
+	config := component.Settings()
+	consumer, err := component.New(context.Background(), config)
+	assert.NotNil(t, consumer)
+	assert.Nil(t, err)
+
+}
+
+func TestDymamicSQSQueueConsumerConfig_Name(t *testing.T) {
+	component := NewDynamicSQSQueueConsumerComponent()
+	config := component.Settings()
+	assert.Equal(t, config.Name(), "sqsworker")
+}
