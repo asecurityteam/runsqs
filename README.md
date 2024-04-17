@@ -1,8 +1,6 @@
 <a id="markdown-runsqs---prepackaged-runtime-helper-for-aws-sqs" name="runsqs---prepackaged-runtime-helper-for-aws-sqs"></a>
 # runsqs - Prepackaged Runtime Helper For AWS SQS
 [![GoDoc](https://godoc.org/github.com/asecurityteam/runsqs?status.svg)](https://godoc.org/github.com/asecurityteam/runsqs)
-[![Build Status](https://travis-ci.com/asecurityteam/runsqs.png?branch=master)](https://travis-ci.com/asecurityteam/runsqs)
-[![codecov.io](https://codecov.io/github/asecurityteam/runsqs/coverage.svg?branch=master)](https://codecov.io/github/asecurityteam/runsqs?branch=master)
 <!-- TOC -->
 
 - [runsqs - Prepackaged Runtime Helper For AWS SQS](#runsqs---prepackaged-runtime-helper-for-aws-sqs)
