@@ -3,19 +3,26 @@ package runsqs
 import (
 	"context"
 
+	"github.com/aws/aws-sdk-go-v2/service/sqs"
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/sqs"
-	"github.com/aws/aws-sdk-go/service/sqs/sqsiface"
 )
+
+// TODO: is this interface properly done?
+// TODO: users to define their own interfaces based on the methods they use on the clients. This allows for more flexibility and focuses on the principle of defining interfaces based on the client's needs rather than having the SDK dictate the interface.
+// type SQSClientAPI interface {
+// 	SendMessage(ctx context.Context, params *sqs.SendMessageInput, optFns ...func(*sqs.Options)) (*sqs.SendMessageOutput, error)
+// 	ReceiveMessage(ctx context.Context, params *sqs.ReceiveMessageInput, optFns ...func(*sqs.Options)) (*sqs.ReceiveMessageOutput, error)
+// 	SendMessageBatch(ctx context.Context, params *sqs.SendMessageBatchInput, optFns ...func(*sqs.Options)) (*sqs.SendMessageBatchOutput, error)
+// }
 
 // DefaultSQSProducer is a basic sqs producer
 type DefaultSQSProducer struct {
-	Queue    sqsiface.SQSAPI
+	Queue    SQSProducer
 	queueURL string
 }
 
 // NewDefaultSQSProducer initializes a new DefaultSQSProducer
-func NewDefaultSQSProducer(queue sqsiface.SQSAPI, url string) *DefaultSQSProducer {
+func NewDefaultSQSProducer(queue SQSProducer, url string) *DefaultSQSProducer {
 	return &DefaultSQSProducer{
 		Queue:    queue,
 		queueURL: url,
@@ -31,7 +38,7 @@ func (producer *DefaultSQSProducer) QueueURL() string {
 // along with setting the queueURL to use
 func (producer *DefaultSQSProducer) ProduceMessage(ctx context.Context, messageInput *sqs.SendMessageInput) error {
 	messageInput.QueueUrl = aws.String(producer.QueueURL())
-	_, e := producer.Queue.SendMessage(messageInput)
+	_, e := producer.Queue.SendMessage(ctx, messageInput)
 	return e
 }
 
@@ -39,5 +46,5 @@ func (producer *DefaultSQSProducer) ProduceMessage(ctx context.Context, messageI
 // along with setting the queueURL to use
 func (producer *DefaultSQSProducer) BatchProduceMessage(ctx context.Context, messageInput *sqs.SendMessageBatchInput) (*sqs.SendMessageBatchOutput, error) {
 	messageInput.QueueUrl = aws.String(producer.QueueURL())
-	return producer.Queue.SendMessageBatch(messageInput)
+	return producer.Queue.SendMessageBatch(ctx, messageInput)
 }
