@@ -3,6 +3,8 @@ package runsqs
 import (
 	"context"
 
+	// TODO: switch to latest
+	updatedSqs "github.com/aws/aws-sdk-go-v2/service/sqs"
 	"github.com/aws/aws-sdk-go/service/sqs"
 )
 
@@ -34,13 +36,13 @@ type SQSMessageConsumerError interface {
 	RetryAfter() int64
 }
 
+// TODO: reword this comment
 // SQSProducer is an interface for producing messages to an aws sqs instance.
 // Implementors are responsible for placing messages on an sqs, and also:
 // - SQS connectivity
 // - error handling
 // - constructing the input *sqs.SendMessageInput
 type SQSProducer interface {
-	QueueURL() string
-	BatchProduceMessage(ctx context.Context, messageBatchInput *sqs.SendMessageBatchInput) (*sqs.SendMessageBatchOutput, error)
-	ProduceMessage(ctx context.Context, messageInput *sqs.SendMessageInput) error
+	SendMessageBatch(ctx context.Context, params *updatedSqs.SendMessageBatchInput, optFns ...func(*updatedSqs.Options)) (*updatedSqs.SendMessageBatchOutput, error)
+	SendMessage(ctx context.Context, params *updatedSqs.SendMessageInput, optFns ...func(*updatedSqs.Options)) (*updatedSqs.SendMessageOutput, error)
 }
