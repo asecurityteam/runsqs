@@ -5,28 +5,27 @@ import (
 
 	// TODO: switch to latest
 	updatedSqs "github.com/aws/aws-sdk-go-v2/service/sqs"
-	"github.com/aws/aws-sdk-go/service/sqs"
 )
 
-// SQSConsumer is an interface that represents an aws sqs queue worker.
-// Implementers of SQSConsumer are responsible for:
-// - SQS connectivity
-// - Start and Stop consumption
-// - error handling
-type SQSConsumer interface {
-	StartConsuming(ctx context.Context) error
-	StopConsuming(ctx context.Context) error
-	GetSQSMessageConsumer() SQSMessageConsumer
-}
+// // SQSConsumer is an interface that represents an aws sqs queue worker.
+// // Implementers of SQSConsumer are responsible for:
+// // - SQS connectivity
+// // - Start and Stop consumption
+// // - error handling
+// type SQSConsumer interface {
+// 	StartConsuming(ctx context.Context) error
+// 	StopConsuming(ctx context.Context) error
+// 	GetSQSMessageConsumer() SQSMessageConsumer
+// }
 
-// SQSMessageConsumer is an interface that defines how a message
-// should be consumer. Users are responsible for unmarshalling messages themselves,
-// and returning errors.
-type SQSMessageConsumer interface {
-	ConsumeMessage(ctx context.Context, message *sqs.Message) SQSMessageConsumerError
-	// DeadLetter will be called when MaxRetries is exhausted, only in the SmartSQSConsumer
-	DeadLetter(ctx context.Context, message *sqs.Message)
-}
+// // SQSMessageConsumer is an interface that defines how a message
+// // should be consumer. Users are responsible for unmarshalling messages themselves,
+// // and returning errors.
+// type SQSMessageConsumer interface {
+// 	ConsumeMessage(ctx context.Context, message *sqs.Message) SQSMessageConsumerError
+// 	// DeadLetter will be called when MaxRetries is exhausted, only in the SmartSQSConsumer
+// 	DeadLetter(ctx context.Context, message *sqs.Message)
+// }
 
 // SQSMessageConsumerError represents an error that can be used to indicate to the consumer that an error should be retried.
 // Note: RetryAfter should be expressed in seconds
