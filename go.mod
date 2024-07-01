@@ -4,7 +4,7 @@ go 1.21
 
 require (
 	github.com/asecurityteam/logevent v1.6.1
-	github.com/aws/aws-sdk-go v1.50.31
+	github.com/aws/aws-sdk-go v1.54.12
 	github.com/golang/mock v1.6.0
 	github.com/rs/xstats v0.0.0-20170813190920-c67367528e16
 	github.com/stretchr/testify v1.9.0
