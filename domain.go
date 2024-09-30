@@ -3,7 +3,7 @@ package runsqs
 import (
 	"context"
 
-	"github.com/asecurityteam/logevent"
+	"github.com/asecurityteam/logevent/v2"
 	"github.com/rs/xstats"
 )
 

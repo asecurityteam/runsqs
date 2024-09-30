@@ -7,7 +7,7 @@ package runsqs
 import (
 	reflect "reflect"
 
-	logevent "github.com/asecurityteam/logevent"
+	logevent "github.com/asecurityteam/logevent/v2"
 	gomock "github.com/golang/mock/gomock"
 )
 
