@@ -3,7 +3,6 @@ module github.com/asecurityteam/runsqs/v3
 go 1.22
 
 require (
-	github.com/asecurityteam/logevent v1.6.1
 	github.com/asecurityteam/logevent/v2 v2.0.1
 	github.com/aws/aws-sdk-go v1.55.5
 	github.com/golang/mock v1.6.0
@@ -23,7 +22,6 @@ require (
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/rs/cors v1.11.0 // indirect
 	github.com/rs/xhandler v0.0.0-20170707052532-1eb70cf1520d // indirect
 	github.com/rs/zerolog v1.33.0 // indirect
 	golang.org/x/net v0.28.0 // indirect
