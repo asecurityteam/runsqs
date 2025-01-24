@@ -1,6 +1,20 @@
 <a id="markdown-runsqs---prepackaged-runtime-helper-for-aws-sqs" name="runsqs---prepackaged-runtime-helper-for-aws-sqs"></a>
 # runsqs - Prepackaged Runtime Helper For AWS SQS
 [![GoDoc](https://godoc.org/github.com/asecurityteam/runsqs?status.svg)](https://godoc.org/github.com/asecurityteam/runsqs)
+
+[![Bugs](https://sonarcloud.io/api/project_badges/measure?project=asecurityteam_runsqs&metric=bugs)](https://sonarcloud.io/dashboard?id=asecurityteam_runsqs)
+[![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=asecurityteam_runsqs&metric=code_smells)](https://sonarcloud.io/dashboard?id=asecurityteam_runsqs)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=asecurityteam_runsqs&metric=coverage)](https://sonarcloud.io/dashboard?id=asecurityteam_runsqs)
+[![Duplicated Lines (%)](https://sonarcloud.io/api/project_badges/measure?project=asecurityteam_runsqs&metric=duplicated_lines_density)](https://sonarcloud.io/dashboard?id=asecurityteam_runsqs)
+[![Lines of Code](https://sonarcloud.io/api/project_badges/measure?project=asecurityteam_runsqs&metric=ncloc)](https://sonarcloud.io/dashboard?id=asecurityteam_runsqs)
+[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=asecurityteam_runsqs&metric=sqale_rating)](https://sonarcloud.io/dashboard?id=asecurityteam_runsqs)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=asecurityteam_runsqs&metric=alert_status)](https://sonarcloud.io/dashboard?id=asecurityteam_runsqs)
+[![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=asecurityteam_runsqs&metric=reliability_rating)](https://sonarcloud.io/dashboard?id=asecurityteam_runsqs)
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=asecurityteam_runsqs&metric=security_rating)](https://sonarcloud.io/dashboard?id=asecurityteam_runsqs)
+[![Technical Debt](https://sonarcloud.io/api/project_badges/measure?project=asecurityteam_runsqs&metric=sqale_index)](https://sonarcloud.io/dashboard?id=asecurityteam_runsqs)
+[![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=asecurityteam_runsqs&metric=vulnerabilities)](https://sonarcloud.io/dashboard?id=asecurityteam_runsqs)
+
+
 <!-- TOC -->
 
 - [runsqs - Prepackaged Runtime Helper For AWS SQS](#runsqs---prepackaged-runtime-helper-for-aws-sqs)
