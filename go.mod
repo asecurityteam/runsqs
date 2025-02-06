@@ -4,10 +4,10 @@ go 1.22
 
 require (
 	github.com/asecurityteam/logevent/v2 v2.0.1
-	github.com/aws/aws-sdk-go v1.55.5
+	github.com/aws/aws-sdk-go v1.55.6
 	github.com/golang/mock v1.6.0
 	github.com/rs/xstats v0.0.0-20170813190920-c67367528e16
-	github.com/stretchr/testify v1.9.0
+	github.com/stretchr/testify v1.10.0
 	gotest.tools v2.2.0+incompatible
 )
 
