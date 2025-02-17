@@ -3,7 +3,7 @@ module github.com/asecurityteam/runsqs/v3
 go 1.22
 
 require (
-	github.com/asecurityteam/logevent/v2 v2.0.1
+	github.com/asecurityteam/logevent/v2 v2.0.2
 	github.com/aws/aws-sdk-go v1.55.6
 	github.com/golang/mock v1.6.0
 	github.com/rs/xstats v0.0.0-20170813190920-c67367528e16
