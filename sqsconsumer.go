@@ -7,10 +7,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/request"
-	"github.com/aws/aws-sdk-go/service/sqs"
-	"github.com/aws/aws-sdk-go/service/sqs/sqsiface"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/aws/retry"
+	"github.com/aws/aws-sdk-go-v2/service/sqs"
+	"github.com/aws/aws-sdk-go-v2/service/sqs/types"
 )
 
 var mutex = &sync.Mutex{}
@@ -21,10 +21,11 @@ var mutex = &sync.Mutex{}
 // the message. Furthermore, this implementation does not support concurrent
 // processing of messages; messages are processed sequentially.
 type DefaultSQSQueueConsumer struct {
-	Queue           sqsiface.SQSAPI
+	Queue           SQSClient
 	LogFn           LogFn
 	QueueURL        string
 	deactivate      chan bool
+	retrierConfig   retry.Standard
 	MessageConsumer SQSMessageConsumer
 	// PollInterval defaults to 1 second
 	PollInterval time.Duration
@@ -47,30 +48,30 @@ func (m *DefaultSQSQueueConsumer) StartConsuming(ctx context.Context) error {
 			return nil
 		default:
 		}
-		var result, e = m.Queue.ReceiveMessage(&sqs.ReceiveMessageInput{
+		var result, e = m.Queue.ReceiveMessage(ctx, &sqs.ReceiveMessageInput{
 			QueueUrl: aws.String(m.QueueURL),
-			AttributeNames: aws.StringSlice([]string{
+			MessageSystemAttributeNames: []types.MessageSystemAttributeName{
 				"SentTimestamp",
-			}),
-			MessageAttributeNames: aws.StringSlice([]string{
+			},
+			MessageAttributeNames: []string{
 				"All",
-			}),
-			WaitTimeSeconds: aws.Int64(int64(math.Ceil((15 * time.Second).Seconds()))),
-		})
+			},
+			WaitTimeSeconds: int32(math.Ceil((15 * time.Second).Seconds())),
+		}, nil)
 		if e != nil {
-			if !(request.IsErrorRetryable(e) || request.IsErrorThrottle(e)) {
+			if !(m.retrierConfig.IsErrorRetryable(e)) {
 				logger.Error(e.Error())
 			}
 			time.Sleep(m.PollInterval)
 			continue
 		}
 		for _, message := range result.Messages {
-			_ = m.GetSQSMessageConsumer().ConsumeMessage(ctx, message)
+			_ = m.GetSQSMessageConsumer().ConsumeMessage(ctx, &message)
 			m.ackMessage(ctx, func() error {
-				var _, e = m.Queue.DeleteMessage(&sqs.DeleteMessageInput{
+				var _, e = m.Queue.DeleteMessage(ctx, &sqs.DeleteMessageInput{
 					QueueUrl:      aws.String(m.QueueURL),
 					ReceiptHandle: message.ReceiptHandle,
-				})
+				}, nil)
 				return e
 			})
 		}
@@ -100,7 +101,7 @@ func (m *DefaultSQSQueueConsumer) ackMessage(ctx context.Context, ack func() err
 	for {
 		e := ack()
 		if e != nil {
-			if !(request.IsErrorRetryable(e) || request.IsErrorThrottle(e)) {
+			if !(m.retrierConfig.IsErrorRetryable(e)) {
 				logger.Error(e.Error())
 				break
 			}
@@ -117,10 +118,11 @@ func (m *DefaultSQSQueueConsumer) ackMessage(ctx context.Context, ack func() err
 // - a maximum number of retries to be placed on a retryable sqs message
 // - concurrent workers
 type SmartSQSConsumer struct {
-	Queue               sqsiface.SQSAPI
+	Queue               SQSClient
 	LogFn               LogFn
 	QueueURL            string
 	deactivate          chan bool
+	retrierConfig       retry.Standard
 	MessageConsumer     SQSMessageConsumer
 	NumWorkers          uint64
 	MessagePoolSize     uint64
@@ -136,7 +138,7 @@ func (m *SmartSQSConsumer) StartConsuming(ctx context.Context) error {
 	mutex.Lock()
 	m.deactivate = make(chan bool)
 	// messagePool represents a queue of messages that are waiting to be consumed
-	messagePool := make(chan *sqs.Message, m.MessagePoolSize)
+	messagePool := make(chan types.Message, m.MessagePoolSize)
 
 	// initialize all workers, pass in the pool of messages for each worker
 	// to consume from
@@ -156,20 +158,20 @@ func (m *SmartSQSConsumer) StartConsuming(ctx context.Context) error {
 			return nil
 		default:
 		}
-		var result, e = m.Queue.ReceiveMessage(&sqs.ReceiveMessageInput{
+		var result, e = m.Queue.ReceiveMessage(ctx, &sqs.ReceiveMessageInput{
 			QueueUrl: aws.String(m.QueueURL),
-			AttributeNames: aws.StringSlice([]string{
+			MessageSystemAttributeNames: []types.MessageSystemAttributeName{
 				"SentTimestamp",
 				"ApproximateReceiveCount",
-			}),
-			MessageAttributeNames: aws.StringSlice([]string{
+			},
+			MessageAttributeNames: []string{
 				"All",
-			}),
-			MaxNumberOfMessages: aws.Int64(int64(m.MaxNumberOfMessages)),
-			WaitTimeSeconds:     aws.Int64(int64(math.Ceil((15 * time.Second).Seconds()))),
-		})
+			},
+			MaxNumberOfMessages: int32(m.MaxNumberOfMessages),
+			WaitTimeSeconds:     int32(math.Ceil((15 * time.Second).Seconds())),
+		}, nil)
 		if e != nil {
-			if !(request.IsErrorRetryable(e) || request.IsErrorThrottle(e)) {
+			if !(m.retrierConfig.IsErrorRetryable(e)) {
 				logger.Error(e.Error())
 			}
 			time.Sleep(m.PollInterval)
@@ -189,58 +191,58 @@ func (m *SmartSQSConsumer) StartConsuming(ctx context.Context) error {
 // messages is closed. worker is responsible for handling deletion of messages, or handling
 // messages that have retryable error. On the event of a retryable error, worker will change
 // the visibilitytimeout of a message to be the configured retryableErr.VisibilityTimeout
-func (m *SmartSQSConsumer) worker(ctx context.Context, messages <-chan *sqs.Message) {
+func (m *SmartSQSConsumer) worker(ctx context.Context, messages <-chan types.Message) {
 	for message := range messages {
-		consumerErr := m.GetSQSMessageConsumer().ConsumeMessage(ctx, message)
+		consumerErr := m.GetSQSMessageConsumer().ConsumeMessage(ctx, &message)
 		if consumerErr != nil {
 			if consumerErr.IsRetryable() {
 				// check to see if we've reached the maximum number of retries allowed
-				receiveCount := getApproximateReceiveCount(message)
+				receiveCount := getApproximateReceiveCount(&message)
 				if receiveCount > m.MaxRetries {
-					m.GetSQSMessageConsumer().DeadLetter(ctx, message)
+					m.GetSQSMessageConsumer().DeadLetter(ctx, &message)
 					m.ackMessage(ctx, func() error {
-						return m.deleteMessage(message)
+						return m.deleteMessage(ctx, &message)
 					})
 					continue
 				}
 				// retry this message by changing visibility timeout of message
 				m.ackMessage(ctx, func() error {
-					return m.changeMessageVisibility(message, consumerErr.RetryAfter())
+					return m.changeMessageVisibility(ctx, &message, consumerErr.RetryAfter())
 				})
 				continue
 			}
 		}
 		// delete message if no error, or error is a permanent, non-retryable error
 		m.ackMessage(ctx, func() error {
-			return m.deleteMessage(message)
+			return m.deleteMessage(ctx, &message)
 		})
 	}
 }
 
 // getApproximateReceiveCount is a helper function for retrieving the ApproximateReceiveCount
 // Attribute of an SQS message
-func getApproximateReceiveCount(message *sqs.Message) uint64 {
-	receiveCountString := *(message.Attributes["ApproximateReceiveCount"])
+func getApproximateReceiveCount(message *types.Message) uint64 {
+	receiveCountString := message.Attributes["ApproximateReceiveCount"]
 	receiveCount, _ := strconv.ParseInt(receiveCountString, 10, 64)
 	return uint64(receiveCount)
 }
 
 // deleteMessage is a helper method for deletion of an SQS message
-func (m *SmartSQSConsumer) deleteMessage(message *sqs.Message) error {
-	var _, e = m.Queue.DeleteMessage(&sqs.DeleteMessageInput{
+func (m *SmartSQSConsumer) deleteMessage(ctx context.Context, message *types.Message) error {
+	var _, e = m.Queue.DeleteMessage(ctx, &sqs.DeleteMessageInput{
 		QueueUrl:      aws.String(m.QueueURL),
 		ReceiptHandle: message.ReceiptHandle,
-	})
+	}, nil)
 	return e
 }
 
 // changeMessageVisibility is a helper method for changing message visibility of an SQS message
-func (m *SmartSQSConsumer) changeMessageVisibility(message *sqs.Message, timeout int64) error {
-	var _, e = m.Queue.ChangeMessageVisibility(&sqs.ChangeMessageVisibilityInput{
+func (m *SmartSQSConsumer) changeMessageVisibility(ctx context.Context, message *types.Message, timeout int32) error {
+	var _, e = m.Queue.ChangeMessageVisibility(ctx, &sqs.ChangeMessageVisibilityInput{
 		QueueUrl:          aws.String(m.QueueURL),
 		ReceiptHandle:     message.ReceiptHandle,
-		VisibilityTimeout: &timeout,
-	})
+		VisibilityTimeout: timeout,
+	}, nil)
 	return e
 }
 
@@ -252,7 +254,7 @@ func (m *SmartSQSConsumer) ackMessage(ctx context.Context, ack func() error) {
 	for {
 		e := ack()
 		if e != nil {
-			if !(request.IsErrorRetryable(e) || request.IsErrorThrottle(e)) {
+			if !(m.retrierConfig.IsErrorRetryable(e)) {
 				logger.Error(e.Error())
 				break
 			}
