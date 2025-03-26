@@ -4,9 +4,8 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/sqs"
+	cfg "github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/sqs"
 )
 
 // DefaultSQSProducerConfig represents the configuration to configure DefaultSQSProducer
@@ -37,12 +36,17 @@ func (c *DefaultSQSProducerComponent) Settings() *DefaultSQSProducerConfig {
 
 // New creates a configured DefaultSQSQueueConsumer
 func (c *DefaultSQSProducerComponent) New(ctx context.Context, config *DefaultSQSProducerConfig) (DefaultSQSProducer, error) {
-	var sesh = session.Must(session.NewSession())
-	q := sqs.New(sesh, &aws.Config{
-		Region:     aws.String(config.QueueRegion),
-		HTTPClient: http.DefaultClient,
-		Endpoint:   aws.String(config.AWSEndpoint),
-	})
+	sqsConfig, err := cfg.LoadDefaultConfig(
+		ctx,
+		cfg.WithRegion(config.QueueRegion),
+		cfg.WithHTTPClient(http.DefaultClient),
+		cfg.WithBaseEndpoint(config.AWSEndpoint),
+	)
+	if err != nil {
+		return DefaultSQSProducer{}, err
+	}
+
+	q := sqs.NewFromConfig(sqsConfig)
 
 	return DefaultSQSProducer{
 		queueURL: config.QueueURL,

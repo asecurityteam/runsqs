@@ -48,57 +48,69 @@ are a simple abstraction around the aws-sdk api for consuming from an SQS or pro
 package main
 
 import (
-    "net/http"
-    "fmt"
+	"context"
+	"fmt"
+	"time"
 
-    "github.com/asecurityteam/runsqs"
-    "github.com/aws/aws-sdk-go/aws"
-    "github.com/aws/aws-sdk-go/aws/session"
-    "github.com/aws/aws-sdk-go/service/sqs"
+	"github.com/asecurityteam/runsqs/v4"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/service/sqs"
+	"github.com/aws/aws-sdk-go-v2/service/sqs/types"
 )
 
-type BasicConsumer string
+type BasicConsumer struct{}
 
-func (m BasicConsumer) ConsumeMessage(ctx context.Context, message []byte) error {
-    fmt.Println(string(message))
-    fmt.Println(m)
-    return nil
+func (m BasicConsumer) ConsumeMessage(ctx context.Context, message *types.Message) runsqs.SQSMessageConsumerError {
+	fmt.Println(string(*message.Body))
+	return nil
+}
+
+func (m BasicConsumer) DeadLetter(ctx context.Context, message *types.Message) {
+	fmt.Println("deadletter")
 }
 
 func main() {
-    // create a new aws session, and establish a SQS instance to connect to.
-    // aws new sessions by default reads AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY as environment variables to use
-	var sesh = session.Must(session.NewSession())
-	queue := sqs.New(sesh, &aws.Config{
-		Region:     aws.String("us-west-2"),
-		HTTPClient: http.DefaultClient,
-		Endpoint:   aws.String("www.aws.com"),
-    })
+	// create a new SQS config, and establish a SQS instance to connect to.
+	// aws new sessions by default reads AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY as environment variables to use
+	ctx := context.Background()
 
+	consumerComponent := runsqs.DefaultSQSQueueConsumerComponent{}
+	consumerConfig := consumerComponent.Settings()
+	consumerConfig.QueueURL = "www.aws.com/url/to/queue"
+	consumerConfig.AWSEndpoint = "www.aws.com"
+	consumerConfig.QueueRegion = "us-east-1"
+	consumerConfig.PollInterval = 1 * time.Second
 
-
-    consumer := runsqs.DefaultSQSQueueConsumer{
-        Queue: queue,
-        QueueURL: "www.aws.com/url/to/queue",
-        MessageConsumer: BasicConsumer{"consooooom"},
-        LogFn: runsqs.LoggerFromContext,
-    }
-
-    producer := runsqs.DefaultSQSProducer{
-        Queue: queue,
-        QueueURL: "www.aws.com/url/to/queue",
-    }
-
-    go producer.ProduceMessage([]byte("incoming sqs message"))
-
-    // Run the SQS consumer.
-    if err := consumer.StartConsuming(); err != nil {
+	consumer, err := consumerComponent.New(ctx, consumerConfig)
+	if err != nil {
 		panic(err.Error())
-    }
+	}
 
-    // expected output:
-    // "incoming sqs message"
-    // "consooooom"
+	consumer.MessageConsumer = BasicConsumer{}
+
+	producerComponent := runsqs.DefaultSQSProducerComponent{}
+	producerConfig := producerComponent.Settings()
+	producerConfig.QueueURL = "www.aws.com/url/to/queue"
+	producerConfig.AWSEndpoint = "www.aws.com"
+	producerConfig.QueueRegion = "us-east-1"
+
+	producer, err := producerComponent.New(ctx, producerConfig)
+	if err != nil {
+		panic(err.Error())
+	}
+
+	go producer.ProduceMessage(ctx, &sqs.SendMessageInput{
+		MessageBody: aws.String("incoming sqs message"),
+		QueueUrl:    aws.String(producer.QueueURL()),
+	})
+
+	// Run the SQS consumer.
+	if err := consumer.StartConsuming(ctx); err != nil {
+		panic(err.Error())
+	}
+
+	// expected output:
+	// "incoming sqs message"
 }
 ```
 

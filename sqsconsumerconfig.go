@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/sqs"
+	"github.com/aws/aws-sdk-go-v2/aws/retry"
+	cfg "github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/sqs"
 )
 
 const (
@@ -49,17 +49,23 @@ func (c *DefaultSQSQueueConsumerComponent) Settings() *DefaultSQSQueueConsumerCo
 
 // New creates a configured DefaultSQSQueueConsumer
 func (c *DefaultSQSQueueConsumerComponent) New(ctx context.Context, config *DefaultSQSQueueConsumerConfig) (DefaultSQSQueueConsumer, error) {
-	var sesh = session.Must(session.NewSession())
-	q := sqs.New(sesh, &aws.Config{
-		Region:     aws.String(config.QueueRegion),
-		HTTPClient: http.DefaultClient,
-		Endpoint:   aws.String(config.AWSEndpoint),
-	})
+	sqsConfig, err := cfg.LoadDefaultConfig(
+		ctx,
+		cfg.WithRegion(config.QueueRegion),
+		cfg.WithHTTPClient(http.DefaultClient),
+		cfg.WithBaseEndpoint(config.AWSEndpoint),
+	)
+	if err != nil {
+		return DefaultSQSQueueConsumer{}, err
+	}
+
+	q := sqs.NewFromConfig(sqsConfig)
 
 	return DefaultSQSQueueConsumer{
-		LogFn:    LoggerFromContext,
-		QueueURL: config.QueueURL,
-		Queue:    q,
+		LogFn:         LoggerFromContext,
+		QueueURL:      config.QueueURL,
+		Queue:         q,
+		retrierConfig: *retry.NewStandard(),
 	}, nil
 }
 
@@ -102,17 +108,23 @@ func (c *SmartSQSQueueConsumerComponent) Settings() *SmartSQSQueueConsumerConfig
 
 // New creates a configured SmartSQSConsumer
 func (c *SmartSQSQueueConsumerComponent) New(ctx context.Context, config *SmartSQSQueueConsumerConfig) (SmartSQSConsumer, error) {
-	var sesh = session.Must(session.NewSession())
-	q := sqs.New(sesh, &aws.Config{
-		Region:     aws.String(config.QueueRegion),
-		HTTPClient: http.DefaultClient,
-		Endpoint:   aws.String(config.AWSEndpoint),
-	})
+	sqsConfig, err := cfg.LoadDefaultConfig(
+		ctx,
+		cfg.WithRegion(config.QueueRegion),
+		cfg.WithHTTPClient(http.DefaultClient),
+		cfg.WithBaseEndpoint(config.AWSEndpoint),
+	)
+	if err != nil {
+		return SmartSQSConsumer{}, err
+	}
+
+	q := sqs.NewFromConfig(sqsConfig)
 
 	return SmartSQSConsumer{
 		LogFn:               LoggerFromContext,
 		QueueURL:            config.QueueURL,
 		Queue:               q,
+		retrierConfig:       *retry.NewStandard(),
 		NumWorkers:          config.NumWorkers,
 		MessagePoolSize:     config.MessagePoolSize,
 		MaxNumberOfMessages: config.MaxNumberOfMessages,

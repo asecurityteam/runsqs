@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"gotest.tools/assert"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestConsumerDecorator(t *testing.T) {
