@@ -57,7 +57,7 @@ func (m *DefaultSQSQueueConsumer) StartConsuming(ctx context.Context) error {
 				"All",
 			},
 			WaitTimeSeconds: int32(math.Ceil((15 * time.Second).Seconds())),
-		}, nil)
+		})
 		if e != nil {
 			if !(m.retrierConfig.IsErrorRetryable(e)) {
 				logger.Error(e.Error())
@@ -169,7 +169,7 @@ func (m *SmartSQSConsumer) StartConsuming(ctx context.Context) error {
 			},
 			MaxNumberOfMessages: int32(m.MaxNumberOfMessages),
 			WaitTimeSeconds:     int32(math.Ceil((15 * time.Second).Seconds())),
-		}, nil)
+		})
 		if e != nil {
 			if !(m.retrierConfig.IsErrorRetryable(e)) {
 				logger.Error(e.Error())
