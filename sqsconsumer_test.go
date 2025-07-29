@@ -83,15 +83,15 @@ func TestDefaultSQSQueueConsumer_GoldenPath(t *testing.T) {
 	}
 
 	// the following mocks test for exactly 5 successful message consumptions, no more no less
-	mockQueue.EXPECT().ReceiveMessage(ctx, sqsInput, nil).Return(receiveMessageOutput, nil).Times(5)
+	mockQueue.EXPECT().ReceiveMessage(ctx, sqsInput).Return(receiveMessageOutput, nil).Times(5)
 	mockMessageConsumer.EXPECT().ConsumeMessage(gomock.Any(), &defaultSQSMessage).Return(nil).Times(5)
-	mockQueue.EXPECT().DeleteMessage(ctx, gomock.Any(), nil).DoAndReturn(func(interface{}, interface{}, interface{}) (*sqs.DeleteMessageOutput, error) {
+	mockQueue.EXPECT().DeleteMessage(ctx, gomock.Any()).DoAndReturn(func(interface{}, interface{}, ...interface{}) (*sqs.DeleteMessageOutput, error) {
 		testBlocker.Done()
 		return nil, nil
 	}).Times(5)
 
 	// infinitely ping empty sqs
-	mockQueue.EXPECT().ReceiveMessage(ctx, sqsInput, nil).Return(sqsEmptyMessageOutput, nil).AnyTimes()
+	mockQueue.EXPECT().ReceiveMessage(ctx, sqsInput).Return(sqsEmptyMessageOutput, nil).AnyTimes()
 
 	testBlocker.Add(5)
 	go consumer.StartConsuming(ctx) // nolint
@@ -122,24 +122,24 @@ func TestDefaultSQSQueueConsumer_ReceivingMessageFailure(t *testing.T) {
 	}
 
 	// 1 retryables, 1 error log
-	mockQueue.EXPECT().ReceiveMessage(ctx, sqsInput, nil).Return(sqsEmptyMessageOutput, &smithy.GenericAPIError{
+	mockQueue.EXPECT().ReceiveMessage(ctx, sqsInput).Return(sqsEmptyMessageOutput, &smithy.GenericAPIError{
 		Code:    "RequestThrottled",
 		Message: "test",
 		Fault:   0,
 	})
 	mockLogger.EXPECT().Error(gomock.Any()).Times(1)
 	// non retryable
-	mockQueue.EXPECT().ReceiveMessage(ctx, sqsInput, nil).Return(sqsEmptyMessageOutput, &smithy.GenericAPIError{
+	mockQueue.EXPECT().ReceiveMessage(ctx, sqsInput).Return(sqsEmptyMessageOutput, &smithy.GenericAPIError{
 		Code:    "RequestCanceled",
 		Message: "test",
 		Fault:   0,
 	})
 
 	// infinitely ping empty sqs
-	mockQueue.EXPECT().ReceiveMessage(ctx, sqsInput, nil).DoAndReturn(func(interface{}, interface{}, interface{}) (interface{}, error) {
+	mockQueue.EXPECT().ReceiveMessage(ctx, sqsInput).Do(func(any, any, ...any) {
 		defer testBlocker.Done()
-		return sqsEmptyMessageOutput, nil
-	}).AnyTimes()
+	}).Return(sqsEmptyMessageOutput, nil).AnyTimes()
+
 	testBlocker.Add(1)
 	go consumer.StartConsuming(ctx) // nolint
 	testBlocker.Wait()
@@ -186,15 +186,15 @@ func TestSmartSQSConsumer_GoldenPath(t *testing.T) {
 		Messages: messages,
 	}
 	// the following mocks test for exactly 5 successful message consumptions, no more no less
-	mockQueue.EXPECT().ReceiveMessage(ctx, sqsInputWithReceiveCount, nil).Return(receiveMessageOutput, nil).Times(5)
+	mockQueue.EXPECT().ReceiveMessage(ctx, sqsInputWithReceiveCount).Return(receiveMessageOutput, nil).Times(5)
 	mockMessageConsumer.EXPECT().ConsumeMessage(gomock.Any(), &defaultSQSMessage).Return(nil).Times(5000)
-	mockQueue.EXPECT().DeleteMessage(ctx, gomock.Any(), nil).DoAndReturn(func(interface{}, interface{}, interface{}) (*sqs.DeleteMessageOutput, error) {
+	mockQueue.EXPECT().DeleteMessage(ctx, gomock.Any()).DoAndReturn(func(interface{}, interface{}, ...interface{}) (*sqs.DeleteMessageOutput, error) {
 		testBlocker.Done()
 		return nil, nil
 	}).Times(5000)
 
 	// infinitely ping empty sqs
-	mockQueue.EXPECT().ReceiveMessage(ctx, sqsInputWithReceiveCount, nil).Return(sqsEmptyMessageOutput, nil).AnyTimes()
+	mockQueue.EXPECT().ReceiveMessage(ctx, sqsInputWithReceiveCount).Return(sqsEmptyMessageOutput, nil).AnyTimes()
 
 	testBlocker.Add(5000)
 	go consumer.StartConsuming(ctx) // nolint
@@ -229,24 +229,25 @@ func TestSmartSQSConsumer_ReceivingMessageFailure(t *testing.T) {
 	}
 
 	// 1 retryables, 1 error log
-	mockQueue.EXPECT().ReceiveMessage(ctx, sqsInputWithReceiveCount, nil).Return(sqsEmptyMessageOutput, &smithy.GenericAPIError{
+	mockQueue.EXPECT().ReceiveMessage(ctx, sqsInputWithReceiveCount).Return(sqsEmptyMessageOutput, &smithy.GenericAPIError{
 		Code:    "RequestThrottled",
 		Message: "test",
 		Fault:   0,
 	})
 	mockLogger.EXPECT().Error(gomock.Any()).Times(1)
 	// non retryable
-	mockQueue.EXPECT().ReceiveMessage(ctx, sqsInputWithReceiveCount, nil).Return(sqsEmptyMessageOutput, &smithy.GenericAPIError{
+	mockQueue.EXPECT().ReceiveMessage(ctx, sqsInputWithReceiveCount).Return(sqsEmptyMessageOutput, &smithy.GenericAPIError{
 		Code:    "RequestCanceled",
 		Message: "test",
 		Fault:   0,
 	})
 
 	// infinitely ping empty sqs
-	mockQueue.EXPECT().ReceiveMessage(ctx, sqsInputWithReceiveCount, nil).DoAndReturn(func(interface{}, interface{}, interface{}) (interface{}, error) {
+	mockQueue.EXPECT().ReceiveMessage(ctx, sqsInputWithReceiveCount).DoAndReturn(func(interface{}, interface{}, ...interface{}) (interface{}, error) {
 		defer testBlocker.Done()
 		return sqsEmptyMessageOutput, nil
 	}).AnyTimes()
+
 	testBlocker.Add(1)
 	go consumer.StartConsuming(ctx) // nolint
 	testBlocker.Wait()
@@ -312,8 +313,8 @@ func TestSmartSQSConsumer_ConsumeMessageFailures(t *testing.T) {
 		Messages: messages2,
 	}
 
-	mockQueue.EXPECT().ReceiveMessage(ctx, sqsInputWithReceiveCount, nil).Return(receiveMessageOutput1, nil)
-	mockQueue.EXPECT().ReceiveMessage(ctx, sqsInputWithReceiveCount, nil).Return(receiveMessageOutput2, nil)
+	mockQueue.EXPECT().ReceiveMessage(ctx, sqsInputWithReceiveCount).Return(receiveMessageOutput1, nil)
+	mockQueue.EXPECT().ReceiveMessage(ctx, sqsInputWithReceiveCount).Return(receiveMessageOutput2, nil)
 
 	mockMessageConsumer.EXPECT().ConsumeMessage(gomock.Any(), &firstSQSMessage).Return(mockSQSMessageConsumerError)
 	mockMessageConsumer.EXPECT().ConsumeMessage(gomock.Any(), &secondSQSMessage).Return(mockSQSMessageConsumerError)
@@ -321,13 +322,13 @@ func TestSmartSQSConsumer_ConsumeMessageFailures(t *testing.T) {
 	mockSQSMessageConsumerError.EXPECT().IsRetryable().Return(true)
 	mockSQSMessageConsumerError.EXPECT().RetryAfter().Return(int32(3))
 
-	mockQueue.EXPECT().ChangeMessageVisibility(ctx, gomock.Any(), gomock.Any()).DoAndReturn(func(interface{}, interface{}, interface{}) (*sqs.ChangeMessageVisibilityOutput, error) {
+	mockQueue.EXPECT().ChangeMessageVisibility(ctx, gomock.Any()).DoAndReturn(func(interface{}, interface{}, ...interface{}) (*sqs.ChangeMessageVisibilityOutput, error) {
 		testBlocker.Done()
 		return nil, nil
 	})
 	mockSQSMessageConsumerError.EXPECT().IsRetryable().Return(false)
 
-	mockQueue.EXPECT().DeleteMessage(ctx, gomock.Any(), gomock.Any()).DoAndReturn(func(interface{}, interface{}, interface{}) (*sqs.DeleteMessageOutput, error) {
+	mockQueue.EXPECT().DeleteMessage(ctx, gomock.Any()).DoAndReturn(func(interface{}, interface{}, ...interface{}) (*sqs.DeleteMessageOutput, error) {
 		testBlocker.Done()
 		return nil, nil
 	})
@@ -413,9 +414,9 @@ func TestSmartSQSConsumer_MaxRetries(t *testing.T) {
 		Messages: messages3,
 	}
 
-	mockQueue.EXPECT().ReceiveMessage(ctx, sqsInputWithReceiveCount, nil).Return(receiveMessageOutput1, nil)
-	mockQueue.EXPECT().ReceiveMessage(ctx, sqsInputWithReceiveCount, nil).Return(receiveMessageOutput2, nil)
-	mockQueue.EXPECT().ReceiveMessage(ctx, sqsInputWithReceiveCount, nil).Return(receiveMessageOutput3, nil)
+	mockQueue.EXPECT().ReceiveMessage(ctx, sqsInputWithReceiveCount).Return(receiveMessageOutput1, nil)
+	mockQueue.EXPECT().ReceiveMessage(ctx, sqsInputWithReceiveCount).Return(receiveMessageOutput2, nil)
+	mockQueue.EXPECT().ReceiveMessage(ctx, sqsInputWithReceiveCount).Return(receiveMessageOutput3, nil)
 
 	mockMessageConsumer.EXPECT().ConsumeMessage(gomock.Any(), &firstSQSMessage).Return(mockSQSMessageConsumerError)
 	mockMessageConsumer.EXPECT().ConsumeMessage(gomock.Any(), &secondSQSMessage).Return(mockSQSMessageConsumerError)
@@ -425,17 +426,17 @@ func TestSmartSQSConsumer_MaxRetries(t *testing.T) {
 	mockSQSMessageConsumerError.EXPECT().IsRetryable().Return(true).Times(3)
 	mockSQSMessageConsumerError.EXPECT().RetryAfter().Return(int32(3)).Times(2)
 
-	mockQueue.EXPECT().ChangeMessageVisibility(ctx, gomock.Any(), nil).DoAndReturn(func(interface{}, interface{}, interface{}) (*sqs.ChangeMessageVisibilityOutput, error) {
+	mockQueue.EXPECT().ChangeMessageVisibility(ctx, gomock.Any()).DoAndReturn(func(interface{}, interface{}, ...interface{}) (*sqs.ChangeMessageVisibilityOutput, error) {
 		testBlocker.Done()
 		return nil, nil
 	})
 
-	mockQueue.EXPECT().ChangeMessageVisibility(ctx, gomock.Any(), nil).DoAndReturn(func(interface{}, interface{}, interface{}) (*sqs.ChangeMessageVisibilityOutput, error) {
+	mockQueue.EXPECT().ChangeMessageVisibility(ctx, gomock.Any()).DoAndReturn(func(interface{}, interface{}, ...interface{}) (*sqs.ChangeMessageVisibilityOutput, error) {
 		testBlocker.Done()
 		return nil, nil
 	})
 
-	mockQueue.EXPECT().DeleteMessage(ctx, gomock.Any(), nil).DoAndReturn(func(interface{}, interface{}, interface{}) (*sqs.DeleteMessageOutput, error) {
+	mockQueue.EXPECT().DeleteMessage(ctx, gomock.Any()).DoAndReturn(func(interface{}, interface{}, ...interface{}) (*sqs.DeleteMessageOutput, error) {
 		testBlocker.Done()
 		return nil, nil
 	})
@@ -479,22 +480,22 @@ func TestSmartSQSConsumer_ConsumeMessageAckFailure(t *testing.T) {
 	receiveMessageOutput := &sqs.ReceiveMessageOutput{
 		Messages: messages,
 	}
-	mockQueue.EXPECT().ReceiveMessage(ctx, sqsInputWithReceiveCount, nil).Return(receiveMessageOutput, nil)
+	mockQueue.EXPECT().ReceiveMessage(ctx, sqsInputWithReceiveCount).Return(receiveMessageOutput, nil)
 
 	mockMessageConsumer.EXPECT().ConsumeMessage(gomock.Any(), &defaultSQSMessage).Return(nil)
 
-	mockQueue.EXPECT().DeleteMessage(ctx, gomock.Any(), nil).DoAndReturn(func(interface{}, interface{}, interface{}) (*sqs.DeleteMessageOutput, error) {
+	mockQueue.EXPECT().DeleteMessage(ctx, gomock.Any()).DoAndReturn(func(interface{}, interface{}, ...interface{}) (*sqs.DeleteMessageOutput, error) {
 		return nil, &smithy.GenericAPIError{
 			Code:    "RequestThrottled",
 			Message: "test",
 			Fault:   0,
 		}
 	}).Times(1)
-	mockQueue.EXPECT().DeleteMessage(ctx, gomock.Any(), nil).DoAndReturn(func(interface{}, interface{}, interface{}) (*sqs.DeleteMessageOutput, error) {
+	mockQueue.EXPECT().DeleteMessage(ctx, gomock.Any()).DoAndReturn(func(interface{}, interface{}, ...interface{}) (*sqs.DeleteMessageOutput, error) {
 		testBlocker.Done()
 		return nil, nil
 	}).Times(1)
-	mockQueue.EXPECT().ReceiveMessage(ctx, sqsInputWithReceiveCount, nil).Return(sqsEmptyMessageOutput, nil).AnyTimes()
+	mockQueue.EXPECT().ReceiveMessage(ctx, sqsInputWithReceiveCount).Return(sqsEmptyMessageOutput, nil).AnyTimes()
 	testBlocker.Add(1)
 	go consumer.StartConsuming(ctx) // nolint
 	testBlocker.Wait()
