@@ -71,7 +71,7 @@ func (m *DefaultSQSQueueConsumer) StartConsuming(ctx context.Context) error {
 				var _, e = m.Queue.DeleteMessage(ctx, &sqs.DeleteMessageInput{
 					QueueUrl:      aws.String(m.QueueURL),
 					ReceiptHandle: message.ReceiptHandle,
-				}, nil)
+				})
 				return e
 			})
 		}
@@ -232,7 +232,7 @@ func (m *SmartSQSConsumer) deleteMessage(ctx context.Context, message *types.Mes
 	var _, e = m.Queue.DeleteMessage(ctx, &sqs.DeleteMessageInput{
 		QueueUrl:      aws.String(m.QueueURL),
 		ReceiptHandle: message.ReceiptHandle,
-	}, nil)
+	})
 	return e
 }
 
@@ -242,7 +242,7 @@ func (m *SmartSQSConsumer) changeMessageVisibility(ctx context.Context, message 
 		QueueUrl:          aws.String(m.QueueURL),
 		ReceiptHandle:     message.ReceiptHandle,
 		VisibilityTimeout: timeout,
-	}, nil)
+	})
 	return e
 }
 

@@ -85,7 +85,7 @@ func TestDefaultSQSQueueConsumer_GoldenPath(t *testing.T) {
 	// the following mocks test for exactly 5 successful message consumptions, no more no less
 	mockQueue.EXPECT().ReceiveMessage(ctx, sqsInput).Return(receiveMessageOutput, nil).Times(5)
 	mockMessageConsumer.EXPECT().ConsumeMessage(gomock.Any(), &defaultSQSMessage).Return(nil).Times(5)
-	mockQueue.EXPECT().DeleteMessage(ctx, gomock.Any(), nil).DoAndReturn(func(interface{}, interface{}, interface{}) (*sqs.DeleteMessageOutput, error) {
+	mockQueue.EXPECT().DeleteMessage(ctx, gomock.Any()).DoAndReturn(func(interface{}, interface{}, ...interface{}) (*sqs.DeleteMessageOutput, error) {
 		testBlocker.Done()
 		return nil, nil
 	}).Times(5)
@@ -188,7 +188,7 @@ func TestSmartSQSConsumer_GoldenPath(t *testing.T) {
 	// the following mocks test for exactly 5 successful message consumptions, no more no less
 	mockQueue.EXPECT().ReceiveMessage(ctx, sqsInputWithReceiveCount).Return(receiveMessageOutput, nil).Times(5)
 	mockMessageConsumer.EXPECT().ConsumeMessage(gomock.Any(), &defaultSQSMessage).Return(nil).Times(5000)
-	mockQueue.EXPECT().DeleteMessage(ctx, gomock.Any(), nil).DoAndReturn(func(interface{}, interface{}, interface{}) (*sqs.DeleteMessageOutput, error) {
+	mockQueue.EXPECT().DeleteMessage(ctx, gomock.Any()).DoAndReturn(func(interface{}, interface{}, ...interface{}) (*sqs.DeleteMessageOutput, error) {
 		testBlocker.Done()
 		return nil, nil
 	}).Times(5000)
@@ -322,13 +322,13 @@ func TestSmartSQSConsumer_ConsumeMessageFailures(t *testing.T) {
 	mockSQSMessageConsumerError.EXPECT().IsRetryable().Return(true)
 	mockSQSMessageConsumerError.EXPECT().RetryAfter().Return(int32(3))
 
-	mockQueue.EXPECT().ChangeMessageVisibility(ctx, gomock.Any(), gomock.Any()).DoAndReturn(func(interface{}, interface{}, interface{}) (*sqs.ChangeMessageVisibilityOutput, error) {
+	mockQueue.EXPECT().ChangeMessageVisibility(ctx, gomock.Any()).DoAndReturn(func(interface{}, interface{}, ...interface{}) (*sqs.ChangeMessageVisibilityOutput, error) {
 		testBlocker.Done()
 		return nil, nil
 	})
 	mockSQSMessageConsumerError.EXPECT().IsRetryable().Return(false)
 
-	mockQueue.EXPECT().DeleteMessage(ctx, gomock.Any(), gomock.Any()).DoAndReturn(func(interface{}, interface{}, interface{}) (*sqs.DeleteMessageOutput, error) {
+	mockQueue.EXPECT().DeleteMessage(ctx, gomock.Any()).DoAndReturn(func(interface{}, interface{}, ...interface{}) (*sqs.DeleteMessageOutput, error) {
 		testBlocker.Done()
 		return nil, nil
 	})
@@ -426,17 +426,17 @@ func TestSmartSQSConsumer_MaxRetries(t *testing.T) {
 	mockSQSMessageConsumerError.EXPECT().IsRetryable().Return(true).Times(3)
 	mockSQSMessageConsumerError.EXPECT().RetryAfter().Return(int32(3)).Times(2)
 
-	mockQueue.EXPECT().ChangeMessageVisibility(ctx, gomock.Any(), nil).DoAndReturn(func(interface{}, interface{}, interface{}) (*sqs.ChangeMessageVisibilityOutput, error) {
+	mockQueue.EXPECT().ChangeMessageVisibility(ctx, gomock.Any()).DoAndReturn(func(interface{}, interface{}, ...interface{}) (*sqs.ChangeMessageVisibilityOutput, error) {
 		testBlocker.Done()
 		return nil, nil
 	})
 
-	mockQueue.EXPECT().ChangeMessageVisibility(ctx, gomock.Any(), nil).DoAndReturn(func(interface{}, interface{}, interface{}) (*sqs.ChangeMessageVisibilityOutput, error) {
+	mockQueue.EXPECT().ChangeMessageVisibility(ctx, gomock.Any()).DoAndReturn(func(interface{}, interface{}, ...interface{}) (*sqs.ChangeMessageVisibilityOutput, error) {
 		testBlocker.Done()
 		return nil, nil
 	})
 
-	mockQueue.EXPECT().DeleteMessage(ctx, gomock.Any(), nil).DoAndReturn(func(interface{}, interface{}, interface{}) (*sqs.DeleteMessageOutput, error) {
+	mockQueue.EXPECT().DeleteMessage(ctx, gomock.Any()).DoAndReturn(func(interface{}, interface{}, ...interface{}) (*sqs.DeleteMessageOutput, error) {
 		testBlocker.Done()
 		return nil, nil
 	})
@@ -484,14 +484,14 @@ func TestSmartSQSConsumer_ConsumeMessageAckFailure(t *testing.T) {
 
 	mockMessageConsumer.EXPECT().ConsumeMessage(gomock.Any(), &defaultSQSMessage).Return(nil)
 
-	mockQueue.EXPECT().DeleteMessage(ctx, gomock.Any(), nil).DoAndReturn(func(interface{}, interface{}, interface{}) (*sqs.DeleteMessageOutput, error) {
+	mockQueue.EXPECT().DeleteMessage(ctx, gomock.Any()).DoAndReturn(func(interface{}, interface{}, ...interface{}) (*sqs.DeleteMessageOutput, error) {
 		return nil, &smithy.GenericAPIError{
 			Code:    "RequestThrottled",
 			Message: "test",
 			Fault:   0,
 		}
 	}).Times(1)
-	mockQueue.EXPECT().DeleteMessage(ctx, gomock.Any(), nil).DoAndReturn(func(interface{}, interface{}, interface{}) (*sqs.DeleteMessageOutput, error) {
+	mockQueue.EXPECT().DeleteMessage(ctx, gomock.Any()).DoAndReturn(func(interface{}, interface{}, ...interface{}) (*sqs.DeleteMessageOutput, error) {
 		testBlocker.Done()
 		return nil, nil
 	}).Times(1)
