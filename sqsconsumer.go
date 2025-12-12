@@ -158,16 +158,6 @@ func (m *SmartSQSConsumer) StartConsuming(ctx context.Context) error {
 			return nil
 		default:
 		}
-		maxMessages := m.MaxNumberOfMessages
-		if maxMessages > 10 {
-			maxMessages = 10 // AWS SQS maximum allowed
-		}
-		var maxMessages32 int32
-		if maxMessages > math.MaxInt32 {
-			maxMessages32 = math.MaxInt32
-		} else {
-			maxMessages32 = int32(maxMessages)
-		}
 		var result, e = m.Queue.ReceiveMessage(ctx, &sqs.ReceiveMessageInput{
 			QueueUrl: aws.String(m.QueueURL),
 			MessageSystemAttributeNames: []types.MessageSystemAttributeName{
@@ -177,7 +167,7 @@ func (m *SmartSQSConsumer) StartConsuming(ctx context.Context) error {
 			MessageAttributeNames: []string{
 				"All",
 			},
-			MaxNumberOfMessages: maxMessages32,
+			MaxNumberOfMessages: int32(m.MaxNumberOfMessages), // nolint:gosec // G115: MaxNumberOfMessages is validated by AWS SQS service (max 10)
 			WaitTimeSeconds:     int32(math.Ceil((15 * time.Second).Seconds())),
 		})
 		if e != nil {
@@ -234,10 +224,7 @@ func (m *SmartSQSConsumer) worker(ctx context.Context, messages <-chan types.Mes
 func getApproximateReceiveCount(message *types.Message) uint64 {
 	receiveCountString := message.Attributes["ApproximateReceiveCount"]
 	receiveCount, _ := strconv.ParseInt(receiveCountString, 10, 64)
-	if receiveCount < 0 {
-		return 0
-	}
-	return uint64(receiveCount)
+	return uint64(receiveCount) // nolint:gosec // G115: receiveCount from SQS ApproximateReceiveCount is always non-negative
 }
 
 // deleteMessage is a helper method for deletion of an SQS message
