@@ -2,10 +2,7 @@ package runsqs
 
 import (
 	"context"
-	"net/http"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sqs"
 )
 
@@ -37,12 +34,8 @@ func (c *DefaultSQSProducerComponent) Settings() *DefaultSQSProducerConfig {
 
 // New creates a configured DefaultSQSQueueConsumer
 func (c *DefaultSQSProducerComponent) New(ctx context.Context, config *DefaultSQSProducerConfig) (DefaultSQSProducer, error) {
-	var sesh = session.Must(session.NewSession())
-	q := sqs.New(sesh, &aws.Config{
-		Region:     aws.String(config.QueueRegion),
-		HTTPClient: http.DefaultClient,
-		Endpoint:   aws.String(config.AWSEndpoint),
-	})
+	sesh, sqsConfig := newSQSClientConfig(config.QueueRegion, config.AWSEndpoint)
+	q := sqs.New(sesh, sqsConfig)
 
 	return DefaultSQSProducer{
 		queueURL: config.QueueURL,
