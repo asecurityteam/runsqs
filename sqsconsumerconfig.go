@@ -2,11 +2,8 @@ package runsqs
 
 import (
 	"context"
-	"net/http"
 	"time"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sqs"
 )
 
@@ -49,12 +46,8 @@ func (c *DefaultSQSQueueConsumerComponent) Settings() *DefaultSQSQueueConsumerCo
 
 // New creates a configured DefaultSQSQueueConsumer
 func (c *DefaultSQSQueueConsumerComponent) New(ctx context.Context, config *DefaultSQSQueueConsumerConfig) (DefaultSQSQueueConsumer, error) {
-	var sesh = session.Must(session.NewSession())
-	q := sqs.New(sesh, &aws.Config{
-		Region:     aws.String(config.QueueRegion),
-		HTTPClient: http.DefaultClient,
-		Endpoint:   aws.String(config.AWSEndpoint),
-	})
+	sesh, sqsConfig := newSQSClientConfig(config.QueueRegion, config.AWSEndpoint)
+	q := sqs.New(sesh, sqsConfig)
 
 	return DefaultSQSQueueConsumer{
 		LogFn:    LoggerFromContext,
@@ -102,12 +95,8 @@ func (c *SmartSQSQueueConsumerComponent) Settings() *SmartSQSQueueConsumerConfig
 
 // New creates a configured SmartSQSConsumer
 func (c *SmartSQSQueueConsumerComponent) New(ctx context.Context, config *SmartSQSQueueConsumerConfig) (SmartSQSConsumer, error) {
-	var sesh = session.Must(session.NewSession())
-	q := sqs.New(sesh, &aws.Config{
-		Region:     aws.String(config.QueueRegion),
-		HTTPClient: http.DefaultClient,
-		Endpoint:   aws.String(config.AWSEndpoint),
-	})
+	sesh, sqsConfig := newSQSClientConfig(config.QueueRegion, config.AWSEndpoint)
+	q := sqs.New(sesh, sqsConfig)
 
 	return SmartSQSConsumer{
 		LogFn:               LoggerFromContext,
